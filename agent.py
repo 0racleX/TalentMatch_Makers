@@ -1,11 +1,14 @@
 import os
 import json
+from dotenv import load_dotenv
 from groq import Groq
 
+load_dotenv()
+
 class TalentMatchAgent:
-    def __init__(self):
+    def __init__(self, model="openai/gpt-oss-120b"):
         self.client = Groq()
-        self.model = "llama-3.3-70b-versatile"
+        self.model = model
 
     def match_talento(self, cv_text, vacantes_text):
         system_prompt = """
