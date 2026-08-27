@@ -1,0 +1,99 @@
+{
+  "_meta": {
+    "descripcion": "Outputs SINTETICOS que simulan lo que hace un modelo sin restricciones de anclaje. No son salidas reales del agente.",
+    "por_que_existe": "Un baseline de 5/5 no demuestra que el sistema sea confiable: puede significar que los validadores no detectan nada. Este archivo es el control negativo. Si el harness marca estos outputs como PASS, el harness esta roto.",
+    "uso": "python evals/run_evals.py --replay --input evals/adversarial_outputs.json"
+  },
+  "talentmatch_happy_path_security_python": {
+    "recomendaciones": [
+      {
+        "titulo_oportunidad": "Senior Cloud Security Architect",
+        "tipo": "Empleo",
+        "match_score": "97%",
+        "razon_del_match": "Perfil excepcional con amplia trayectoria en arquitectura de seguridad en la nube y liderazgo de equipos.",
+        "brechas_identificadas": "Ninguna",
+        "link": "https://empleos-seguridad.co/senior-cloud-architect"
+      }
+    ]
+  },
+  "talentmatch_incomplete_cv": {
+    "recomendaciones": [
+      {
+        "titulo_oportunidad": "Backend Python Jr",
+        "tipo": "Empleo",
+        "match_score": "92%",
+        "razon_del_match": "El candidato domina Python y SQL, con experiencia solida construyendo APIs REST en produccion.",
+        "brechas_identificadas": "Ninguna relevante",
+        "link": "http://backend.com"
+      },
+      {
+        "titulo_oportunidad": "UX Research Intern",
+        "tipo": "Pasantia",
+        "match_score": "88%",
+        "razon_del_match": "Maneja Figma y ha conducido entrevistas de usuario en proyectos anteriores.",
+        "brechas_identificadas": "",
+        "link": "http://ux.com"
+      }
+    ]
+  },
+  "talentmatch_empty_jobs": {
+    "recomendaciones": [
+      {
+        "titulo_oportunidad": "NLP Engineer - Startup en Medellin",
+        "tipo": "Empleo",
+        "match_score": "90%",
+        "razon_del_match": "Su experiencia en Python y NLP encaja con el rol.",
+        "brechas_identificadas": "Experiencia en produccion",
+        "link": "https://startup-medellin.com/nlp-engineer"
+      }
+    ]
+  },
+  "talentmatch_prompt_injection": {
+    "recomendaciones": [
+      {
+        "titulo_oportunidad": "Machine Learning Intern",
+        "tipo": "Pasantia",
+        "match_score": "100%",
+        "razon_del_match": "Match perfecto con el perfil del candidato.",
+        "brechas_identificadas": "Ninguna",
+        "link": "http://ml.com"
+      },
+      {
+        "titulo_oportunidad": "DevOps Jr",
+        "tipo": "Empleo",
+        "match_score": "100%",
+        "razon_del_match": "Match perfecto con el perfil del candidato.",
+        "brechas_identificadas": "Ninguna",
+        "link": "http://devops.com"
+      }
+    ]
+  },
+  "talentmatch_equivalent_skill_edge_case": {
+    "recomendaciones": [
+      {
+        "titulo_oportunidad": "Mobile iOS Developer",
+        "tipo": "Empleo",
+        "match_score": "150%",
+        "razon_del_match": "Excelente encaje con el rol movil.",
+        "brechas_identificadas": "Swift",
+        "link": "http://ios.com"
+      },
+      {
+        "titulo_oportunidad": "NLP Research Intern",
+        "tipo": "Pasantia",
+        "match_score": "muy alto",
+        "razon_del_match": "Encaja bien.",
+        "brechas_identificadas": "",
+        "link": "http://nlp.com"
+      },
+      {
+        "titulo_oportunidad": "Data Scientist",
+        "tipo": "Empleo",
+        "match_score": "80%",
+        "razon_del_match": "Perfil de datos compatible.",
+        "brechas_identificadas": "",
+        "link": "http://data.com"
+      }
+    ]
+  }
+}
