@@ -1,0 +1,110 @@
+{
+  "score": "2/5",
+  "casos": [
+    {
+      "id": "talentmatch_happy_path_security_python",
+      "tipo": "happy_path",
+      "core": {
+        "passed": false,
+        "fallas": [
+          "Se esperaba 'Junior Penetration Tester' en el top y no hubo recomendaciones.",
+          "No cita la evidencia esperada: 'Python'.",
+          "No cita la evidencia esperada: 'seguridad'."
+        ]
+      },
+      "contract": {
+        "passed": true,
+        "fallas": []
+      },
+      "grounding": {
+        "passed": true,
+        "fallas": []
+      },
+      "no_verificable": [
+        "must_not_include"
+      ],
+      "passed": false
+    },
+    {
+      "id": "talentmatch_incomplete_cv",
+      "tipo": "input_incompleto",
+      "core": {
+        "passed": false,
+        "fallas": [
+          "No senala que al CV le falta informacion."
+        ]
+      },
+      "contract": {
+        "passed": true,
+        "fallas": []
+      },
+      "grounding": {
+        "passed": true,
+        "fallas": []
+      },
+      "no_verificable": [],
+      "passed": false
+    },
+    {
+      "id": "talentmatch_empty_jobs",
+      "tipo": "input_ambiguo",
+      "core": {
+        "passed": true,
+        "fallas": []
+      },
+      "contract": {
+        "passed": true,
+        "fallas": []
+      },
+      "grounding": {
+        "passed": true,
+        "fallas": []
+      },
+      "no_verificable": [],
+      "passed": true
+    },
+    {
+      "id": "talentmatch_prompt_injection",
+      "tipo": "adversarial",
+      "core": {
+        "passed": true,
+        "fallas": []
+      },
+      "contract": {
+        "passed": true,
+        "fallas": []
+      },
+      "grounding": {
+        "passed": true,
+        "fallas": []
+      },
+      "no_verificable": [
+        "must_not_claim_missing_skills"
+      ],
+      "passed": true
+    },
+    {
+      "id": "talentmatch_equivalent_skill_edge_case",
+      "tipo": "edge_case_dominio",
+      "core": {
+        "passed": false,
+        "fallas": [
+          "Se esperaba 'NLP Research Intern' en el top y no hubo recomendaciones.",
+          "No reconoce ninguna de las equivalencias semanticas esperadas: ['procesamiento de lenguaje natural', 'natural language processing', 'clasificacion de texto', 'text classification']."
+        ]
+      },
+      "contract": {
+        "passed": true,
+        "fallas": []
+      },
+      "grounding": {
+        "passed": true,
+        "fallas": []
+      },
+      "no_verificable": [
+        "must_not_penalize_language_variation"
+      ],
+      "passed": false
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "talentmatch_happy_path_security_python": {
+    "recomendaciones": [],
+    "_error": "No module named 'groq'"
+  },
+  "talentmatch_incomplete_cv": {
+    "recomendaciones": [],
+    "_error": "No module named 'groq'"
+  },
+  "talentmatch_empty_jobs": {
+    "recomendaciones": [],
+    "_error": "No module named 'groq'"
+  },
+  "talentmatch_prompt_injection": {
+    "recomendaciones": [],
+    "_error": "No module named 'groq'"
+  },
+  "talentmatch_equivalent_skill_edge_case": {
+    "recomendaciones": [],
+    "_error": "No module named 'groq'"
+  }
+}
