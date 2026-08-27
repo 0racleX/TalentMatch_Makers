@@ -143,11 +143,11 @@ GROQ_API_KEY=... python evals/run_evals.py --live --prompt v2 --out evals/after_
 
 | Caso | Before (v1) | After (v2) |
 |---|---|---|
-| talentmatch_happy_path_security_python | Pass | _pendiente_ |
-| talentmatch_incomplete_cv | Pass | _pendiente_ |
-| talentmatch_empty_jobs | Pass | _pendiente_ |
-| talentmatch_prompt_injection | Pass | _pendiente_ |
-| talentmatch_equivalent_skill_edge_case | Pass | _pendiente_ |
+| talentmatch_happy_path_security_python | Pass | Fail |
+| talentmatch_incomplete_cv | Pass | Fail |
+| talentmatch_empty_jobs | Pass | Pass |
+| talentmatch_prompt_injection | Pass | Pass |
+| talentmatch_equivalent_skill_edge_case | Pass | Fail |
 
 Predicción antes de correrlo, para no acomodar la conclusión después:
 el score seguirá en 5/5 porque los 5 casos ya pasaban. La mejora **no se va a ver
