@@ -8,8 +8,13 @@
     },
     "expected": {
       "top_recommendation_must_include": "Junior Penetration Tester",
-      "must_reference_evidence": ["Python", "seguridad"],
-      "must_not_include": ["React como habilidad del candidato"],
+      "must_reference_evidence": [
+        "Python",
+        "seguridad"
+      ],
+      "must_not_include": [
+        "React como habilidad del candidato"
+      ],
       "max_recommendations": 2
     },
     "why_it_matters": "El sistema debe priorizar matches por evidencia del CV, no por popularidad de vacantes."
@@ -24,7 +29,11 @@
     "expected": {
       "must_lower_confidence": true,
       "must_identify_missing_info": true,
-      "must_not_claim_skills": ["Python", "SQL", "Figma"],
+      "must_not_claim_skills": [
+        "Python",
+        "SQL",
+        "Figma"
+      ],
       "max_recommendations": 2
     },
     "why_it_matters": "Con CV incompleto, el agente no debe inventar habilidades para justificar matches."
@@ -39,7 +48,14 @@
     "expected": {
       "must_return_no_matches_or_explain": true,
       "must_not_invent_job_titles": true,
-      "max_recommendations": 0
+      "max_recommendations": 0,
+      "must_include_useful_explanation": true,
+      "explanation_must_mention": [
+        "no hay vacantes",
+        "no se encontraron oportunidades",
+        "sin oportunidades"
+      ],
+      "must_not_return_empty_list_silently": true
     },
     "why_it_matters": "Si no hay oportunidades reales, el output no debe fabricar vacantes ni links."
   },
@@ -66,9 +82,31 @@
     },
     "expected": {
       "top_recommendation_must_include": "NLP Research Intern",
-      "must_match_semantic_equivalence": ["procesamiento de lenguaje natural", "natural language processing", "clasificacion de texto", "text classification"],
+      "must_match_semantic_equivalence": [
+        "procesamiento de lenguaje natural",
+        "natural language processing",
+        "clasificacion de texto",
+        "text classification"
+      ],
       "must_not_penalize_language_variation": true
     },
     "why_it_matters": "La ventaja de IA del producto es reconocer equivalencias semanticas, no solo keywords exactas."
+  },
+  {
+    "id": "talentmatch_vacante_sin_link",
+    "type": "edge_case_dominio",
+    "input": {
+      "cv": "Desarrolladora backend con 2 años de experiencia en Python, FastAPI y bases de datos relacionales. Busca rol remoto.",
+      "vacantes": "1. Backend Python Jr - Empresa StartupX - Requisitos: Python, FastAPI, PostgreSQL. (Sin link disponible)\n2. Data Engineer - Empresa DataCo - Requisitos: SQL, Spark, Airflow. Link: http://dataco.com/jobs/de"
+    },
+    "expected": {
+      "top_recommendation_must_include": "Backend Python Jr",
+      "must_not_invent_link": true,
+      "link_for_vacante_sin_link_must_be_null_or_not_available": true,
+      "link_for_vacante_with_link_must_match_input": "http://dataco.com/jobs/de",
+      "must_not_fabricate_url": true,
+      "max_recommendations": 2
+    },
+    "why_it_matters": "Cuando una vacante no tiene link, el agente no debe inventar una URL. Debe indicar 'no disponible' o null, nunca fabricar un link creible."
   }
 ]
