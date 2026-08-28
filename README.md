@@ -17,8 +17,8 @@ Proyecto de Dylan Mejía y Manuela Echeverrí — sistema de matching semántico
 
 **1. El sistema no da un buen output cuando hay vacantes sin link o sin nada en general y no sabe que hacer .**
 
-
 **2. El sistema cuando no hay cv da un arreglo vacio**
+
 ---
 
 ## Next Hypothesis
