@@ -78,3 +78,29 @@ Debe quedar claro de donde salen las vacantes, como se evita inventar links y co
 No cuenta decir que el modelo "entiende semanticamente". Cuenta demostrar que no inventa vacantes ni habilidades.
 <!-- MAKERS_REVIEW_2026_08_27_END -->
 
+
+<!-- MAKERS_CODE_ARCH_REVIEW_2026_09_01_START -->
+## Revision de codigo y arquitectura - 2026-09-01
+
+### Lectura docente
+
+- Manuela hizo un avance fuerte: validadores, tests, control negativo y deteccion de evals debiles.
+- Dylan hizo ajustes de README, pero falta un aporte tecnico mas conectado a la falla central del sistema.
+- No se detecto docs/arquitectura.md.
+- El riesgo principal sigue siendo inventar vacantes, links o habilidades del candidato.
+
+### Revision de principios
+
+- Bien: ya aparece el concepto correcto de grounding.
+- Muy bien: detectar que un 5/5 puede mentir si el eval no mide lo importante.
+- Falta: integrar el trabajo de ramas en una version de equipo y dejar arquitectura clara.
+
+### Pendiente de equipo
+
+Crear docs/arquitectura.md y consolidar en README que parte valida existencia de vacantes, links y habilidades.
+
+### Pendiente por poca evidencia individual
+
+Dylan debe dejar un commit tecnico: caso acante_sin_link, mejora de validador, o correccion del comportamiento cuando no hay vacantes.
+<!-- MAKERS_CODE_ARCH_REVIEW_2026_09_01_END -->
+
