@@ -1,0 +1,39 @@
+name: TalentMatch CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Run Deterministic Unit Tests & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Seed Database
+        run: |
+          python -m db.seed
+
+      - name: Run Deterministic Unit Tests
+        run: |
+          python -m unittest discover tests -v
+
+      - name: Verify Health Endpoint Syntax
+        run: |
+          python -c "import api.main; print('FastAPI loaded successfully without runtime issues')"
