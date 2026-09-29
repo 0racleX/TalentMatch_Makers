@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 from api.security import classify_document_heuristics, DocumentValidationResult
 from agent import TalentMatchMultiAgent
 from api.models import TalentMatchOutput
-from tests.fakes import FakeLLMProvider
+from tests.fakes import FakeLLMProvider, FakeRepositorio
 
 
 class TestDocumentValidation(unittest.TestCase):
@@ -127,7 +127,7 @@ class TestDocumentValidation(unittest.TestCase):
     def test_agent_run_bloquea_practica_sin_llm(self):
         # LLM falso sin respuestas: si el pipeline llamara al modelo, el test falla
         fake_llm = FakeLLMProvider()
-        agente = TalentMatchMultiAgent(llm_provider=fake_llm)
+        agente = TalentMatchMultiAgent(llm_provider=fake_llm, audit_repo=FakeRepositorio([]))
 
         texto_practica = """
         Práctica de laboratorio #2: Redes y Telecomunicaciones

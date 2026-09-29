@@ -9,7 +9,7 @@ no existe, el sistema NO la muestra.
 import unittest
 
 from agent import TalentMatchMultiAgent
-from tests.fakes import FakeLLMProvider
+from tests.fakes import FakeLLMProvider, FakeRepositorio
 
 CV_SEGURIDAD = (
     "Estudiante de sistemas con experiencia en Python, ciberseguridad, CTFs y "
@@ -45,7 +45,8 @@ class TestPipelineConFakeLLM(unittest.TestCase):
                  "brechas_identificadas": "SIEM"},
             ]},
         ])
-        agente = TalentMatchMultiAgent(llm_provider=fake)
+        # Vacantes reales de la BD; auditoria en memoria para no ensuciar el Trust Center local
+        agente = TalentMatchMultiAgent(llm_provider=fake, audit_repo=FakeRepositorio([]))
 
         salida = agente.run(CV_SEGURIDAD)
 
@@ -70,7 +71,8 @@ class TestPipelineConFakeLLM(unittest.TestCase):
                  "razon_del_match": "Python y CTF", "brechas_identificadas": "Burp Suite"},
             ]},
         ])
-        agente = TalentMatchMultiAgent(llm_provider=fake)
+        # Vacantes reales de la BD; auditoria en memoria para no ensuciar el Trust Center local
+        agente = TalentMatchMultiAgent(llm_provider=fake, audit_repo=FakeRepositorio([]))
 
         salida = agente.run(CV_SEGURIDAD)
 
@@ -90,7 +92,8 @@ class TestPipelineConFakeLLM(unittest.TestCase):
              "tipo_empresa_ideal": "Startup", "habilidades_detectadas": ["Python"],
              "habilidades_recomendadas": ["Docker"], "mensaje": "Sigue aprendiendo"},
         ])
-        agente = TalentMatchMultiAgent(llm_provider=fake)
+        # Vacantes reales de la BD; auditoria en memoria para no ensuciar el Trust Center local
+        agente = TalentMatchMultiAgent(llm_provider=fake, audit_repo=FakeRepositorio([]))
 
         salida = agente.run(CV_SEGURIDAD)
 

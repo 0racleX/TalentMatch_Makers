@@ -15,6 +15,19 @@ from adapters.outbound.db_repository_adapter import SQLAlchemyRepositoryAdapter
 from core.ports.repository_port import AuditRepositoryPort, VacanteRepositoryPort
 
 
+def _borrar_ultima_auditoria():
+    from db.database import SessionLocal
+    from db.models import MatchAuditModel
+    sesion = SessionLocal()
+    try:
+        ultima = sesion.query(MatchAuditModel).order_by(MatchAuditModel.id.desc()).first()
+        if ultima is not None:
+            sesion.delete(ultima)
+            sesion.commit()
+    finally:
+        sesion.close()
+
+
 class TestRepositoryContract(unittest.TestCase):
 
     def setUp(self):
@@ -30,8 +43,11 @@ class TestRepositoryContract(unittest.TestCase):
     def test_record_audit_no_lanza_y_se_refleja_en_metricas(self):
         antes = self.repo.get_audit_metrics()["total_evaluaciones"]
         self.repo.record_audit(modo="match", num_recs=2, top_score=80, is_suspicious=False)
-        despues = self.repo.get_audit_metrics()["total_evaluaciones"]
-        self.assertEqual(despues, antes + 1)
+        try:
+            despues = self.repo.get_audit_metrics()["total_evaluaciones"]
+            self.assertEqual(despues, antes + 1)
+        finally:
+            _borrar_ultima_auditoria()  # no dejar filas de prueba en el Trust Center local
 
     def test_recursos_para_brechas_con_texto(self):
         recursos = self.repo.get_recursos_para_brechas("Docker, FastAPI")
