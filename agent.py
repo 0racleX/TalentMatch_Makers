@@ -4,19 +4,17 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
-from groq import Groq
 
 from api.models import (
     TalentMatchOutput, Recomendacion, PerfilCandidato, RecursoAprendizaje
 )
-import re
-from api.retry import with_retry, DailyTokenLimitExceeded
 from api.security import detect_prompt_injection, classify_document_heuristics
-from db.repository import (
-    get_all_vacantes, get_vacante_by_id, get_recursos_para_brechas, record_audit
-)
 from core.ports.llm_port import LLMProviderPort
-from adapters.outbound.groq_adapter import GroqLLMAdapter, FALLBACK_MODELS
+from core.ports.repository_port import VacanteRepositoryPort, AuditRepositoryPort
+
+# Nota de arquitectura: este modulo (dominio) NO importa groq, sqlalchemy ni
+# db.repository. Solo conoce los puertos. Los adaptadores concretos se crean
+# por defecto dentro de __init__ (import perezoso) o se inyectan desde afuera.
 
 load_dotenv()
 logger = logging.getLogger("talentmatch.agent")
@@ -29,37 +27,59 @@ class AgentError(Exception):
     """Falló la llamada a Groq o el parseo de su respuesta."""
 
 
-def cargar_vacantes() -> list:
-    """Carga vacantes desde la base de datos con fallback al archivo JSON."""
-    try:
-        vacantes = get_all_vacantes()
-        if vacantes:
-            return vacantes
-    except Exception as e:
-        logger.warning("No se pudo cargar desde base de datos: %s. Usando JSON.", e)
+def cargar_vacantes(repo: Optional[VacanteRepositoryPort] = None) -> list:
+    """Carga vacantes desde el puerto de repositorio con fallback al archivo JSON."""
+    if repo is not None:
+        try:
+            vacantes = repo.get_all_vacantes()
+            if vacantes:
+                return vacantes
+        except Exception as e:
+            logger.warning("No se pudo cargar desde el repositorio: %s. Usando JSON.", e)
 
     with open(VACANTES_PATH, encoding="utf-8") as f:
         return json.load(f)
-
-
-FALLBACK_MODELS = [
-    "openai/gpt-oss-20b",
-    "qwen/qwen3.8-27b",
-    "openai/gpt-oss-120b"
-]
 
 
 class TalentMatchMultiAgent:
     def __init__(
         self,
         model: Optional[str] = None,
-        llm_provider: Optional[LLMProviderPort] = None
+        llm_provider: Optional[LLMProviderPort] = None,
+        vacante_repo: Optional[VacanteRepositoryPort] = None,
+        audit_repo: Optional[AuditRepositoryPort] = None
     ):
+        """
+        Todas las dependencias externas entran por puertos (Dependency Inversion).
+        Si no se inyectan, se usan los adaptadores de produccion:
+        GroqLLMAdapter y SQLAlchemyRepositoryAdapter.
+        """
         self.model = model or os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
-        # No se toca `.client` aqui: el adaptador de Groq lo crea solo cuando
-        # se hace la primera llamada real al modelo.
-        self.llm_provider = llm_provider or GroqLLMAdapter(model=self.model)
-        self.vacantes = cargar_vacantes()
+
+        if llm_provider is None:
+            from adapters.outbound.groq_adapter import GroqLLMAdapter
+            # No se toca `.client` aqui: el adaptador lo crea en la primera llamada real.
+            llm_provider = GroqLLMAdapter(model=self.model)
+        self.llm_provider = llm_provider
+
+        if vacante_repo is None or audit_repo is None:
+            from adapters.outbound.db_repository_adapter import SQLAlchemyRepositoryAdapter
+            repo_bd = SQLAlchemyRepositoryAdapter()
+            vacante_repo = vacante_repo or repo_bd
+            audit_repo = audit_repo or repo_bd
+        self.vacante_repo = vacante_repo
+        self.audit_repo = audit_repo
+
+        self.vacantes = cargar_vacantes(self.vacante_repo)
+
+    def _registrar_auditoria(self, modo: str, num_recs: int, top_score: int, is_suspicious: bool) -> None:
+        """La auditoria nunca debe tumbar una respuesta al candidato."""
+        try:
+            self.audit_repo.record_audit(
+                modo=modo, num_recs=num_recs, top_score=top_score, is_suspicious=is_suspicious
+            )
+        except Exception as e:
+            logger.debug("No se pudo registrar auditoria: %s", e)
 
     def _call_groq_json(self, prompt: str, temperature: float = 0.0) -> dict:
         """
@@ -249,7 +269,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
             data = self._call_groq_json(prompt, temperature=0.0)
             # Vincular habilidades recomendadas con recursos de aprendizaje (Camino a la vacante)
             habilidades_rec = data.get("habilidades_recomendadas", [])
-            recursos_raw = get_recursos_para_brechas(" ".join(habilidades_rec))
+            recursos_raw = self.vacante_repo.get_recursos_para_brechas(", ".join(habilidades_rec))
             recursos_modelos = [RecursoAprendizaje(**r) for r in recursos_raw]
 
             return PerfilCandidato(
@@ -290,7 +310,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
             brechas_str = eval_item.get("brechas_identificadas", "")
 
             # Camino a la vacante: Buscar recursos concretos para las brechas
-            recursos_db = get_recursos_para_brechas(brechas_str)
+            recursos_db = self.vacante_repo.get_recursos_para_brechas(brechas_str)
             recursos_modelos = [RecursoAprendizaje(**r) for r in recursos_db]
 
             rec = Recomendacion(
@@ -335,15 +355,12 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
                 tipo_documento=doc_validation.doc_type,
                 mensaje_validacion=doc_validation.reason
             )
-            try:
-                record_audit(
-                    modo="documento_invalido",
-                    num_recs=0,
-                    top_score=0,
-                    is_suspicious=check_seguridad.is_suspicious
-                )
-            except Exception:
-                pass
+            self._registrar_auditoria(
+                modo="documento_invalido",
+                num_recs=0,
+                top_score=0,
+                is_suspicious=check_seguridad.is_suspicious
+            )
             return output
 
         # Paso 1: Extraer perfil del candidato y validar autenticidad con LLM
@@ -366,15 +383,12 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
                 tipo_documento=tipo_doc,
                 mensaje_validacion=motivo
             )
-            try:
-                record_audit(
-                    modo="documento_invalido",
-                    num_recs=0,
-                    top_score=0,
-                    is_suspicious=check_seguridad.is_suspicious
-                )
-            except Exception:
-                pass
+            self._registrar_auditoria(
+                modo="documento_invalido",
+                num_recs=0,
+                top_score=0,
+                is_suspicious=check_seguridad.is_suspicious
+            )
             return output
 
         # Paso 2: Buscar vacantes relevantes en la BD interna
@@ -420,15 +434,12 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
             )
 
         # Registrar auditoría para el Trust Center
-        try:
-            record_audit(
-                modo=output.modo,
-                num_recs=len(output.recomendaciones),
-                top_score=max_score,
-                is_suspicious=check_seguridad.is_suspicious
-            )
-        except Exception:
-            pass
+        self._registrar_auditoria(
+            modo=output.modo,
+            num_recs=len(output.recomendaciones),
+            top_score=max_score,
+            is_suspicious=check_seguridad.is_suspicious
+        )
 
         return output
 
@@ -444,7 +455,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
         Responde a la pregunta que ni LinkedIn ni Magneto pueden responder:
         'Si aprendo X y Y, ¿cuánto sube mi match y por qué?'
         """
-        vacante = get_vacante_by_id(vacante_id)
+        vacante = self.vacante_repo.get_vacante_by_id(vacante_id)
         if not vacante:
             raise AgentError(f"Vacante con ID '{vacante_id}' no encontrada.")
 

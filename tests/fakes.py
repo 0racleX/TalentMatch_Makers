@@ -48,3 +48,33 @@ class FakeLLMProvider(LLMProviderPort):
     def generate_text(self, prompt: str, temperature: float = 0.7) -> str:
         self.prompts.append(prompt)
         return "texto falso"
+
+
+class FakeRepositorio:
+    """
+    Repositorio en memoria que cumple VacanteRepositoryPort y AuditRepositoryPort
+    para tests: guarda las auditorias en una lista en vez de escribir en la BD.
+    """
+
+    def __init__(self, vacantes, recursos=None):
+        self.vacantes = list(vacantes)
+        self.recursos = list(recursos or [])
+        self.auditorias = []
+
+    def get_all_vacantes(self):
+        return list(self.vacantes)
+
+    def get_vacante_by_id(self, vacante_id):
+        return next((v for v in self.vacantes if v["id"] == vacante_id), None)
+
+    def get_recursos_para_brechas(self, brechas):
+        texto = (brechas or "").lower()
+        return [r for r in self.recursos if r["habilidad"].lower() in texto]
+
+    def record_audit(self, modo, num_recs, top_score, is_suspicious=False):
+        self.auditorias.append(
+            {"modo": modo, "num_recs": num_recs, "top_score": top_score, "is_suspicious": is_suspicious}
+        )
+
+    def get_audit_metrics(self):
+        return {"total_evaluaciones": len(self.auditorias)}
