@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import logging
 from pathlib import Path
@@ -25,6 +26,27 @@ UMBRAL_MATCH = 40  # Si el mejor score < 40% se activa el agente de perfilamient
 
 class AgentError(Exception):
     """Falló la llamada a Groq o el parseo de su respuesta."""
+
+
+def parse_match_score(valor: Any) -> int:
+    """
+    Normaliza el match_score que devuelve el modelo a un entero 0-100.
+
+    El modelo no siempre respeta el formato "85%": puede devolver 85, 85.0,
+    "85", "85.5 %" o incluso "150%". Antes, un entero hacia fallar el formatter
+    con AttributeError (int no tiene .replace) y un valor >100 hacia fallar la
+    validacion de Pydantic, tumbando la respuesta completa.
+    """
+    if isinstance(valor, bool) or valor is None:
+        return 0
+    if isinstance(valor, (int, float)):
+        numero = float(valor)
+    else:
+        m = re.search(r"-?\d+(?:[.,]\d+)?", str(valor))
+        if not m:
+            return 0
+        numero = float(m.group(0).replace(",", "."))
+    return max(0, min(100, int(round(numero))))
 
 
 def cargar_vacantes(repo: Optional[VacanteRepositoryPort] = None) -> list:
@@ -300,11 +322,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
             if not vacante:
                 continue
 
-            score_str = eval_item.get("match_score", "0%")
-            try:
-                score_num = int(score_str.replace("%", "").strip())
-            except ValueError:
-                score_num = 0
+            score_num = parse_match_score(eval_item.get("match_score"))
 
             link = vacante.get("link") or None  # null si no existe, NUNCA inventado
             brechas_str = eval_item.get("brechas_identificadas", "")
@@ -401,12 +419,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
         recomendaciones = self.formatter_agent(vacantes_candidatas, evaluaciones)
 
         # Determinar si hubo match suficiente
-        max_score = 0
-        if recomendaciones:
-            try:
-                max_score = max(int(r.match_score.replace("%", "")) for r in recomendaciones)
-            except Exception:
-                max_score = 0
+        max_score = max((parse_match_score(r.match_score) for r in recomendaciones), default=0)
 
         if recomendaciones and max_score >= UMBRAL_MATCH:
             output = TalentMatchOutput(
@@ -462,12 +475,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
         # Re-evaluar con el CV original
         perfil = self.extraction_agent(cv_text)
         evals_originales = self.ranking_agent(cv_text, perfil, [vacante])
-        score_orig = 0
-        if evals_originales:
-            try:
-                score_orig = int(evals_originales[0]["match_score"].replace("%", ""))
-            except ValueError:
-                score_orig = 0
+        score_orig = parse_match_score(evals_originales[0].get("match_score")) if evals_originales else 0
 
         # Simular CV enriquecido con las nuevas habilidades certificadas
         cv_enriquecido = f"""{cv_text}
@@ -482,12 +490,9 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
         nueva_razon = ""
         brechas_restantes = ""
         if evals_proyectadas:
-            try:
-                score_proy = int(evals_proyectadas[0]["match_score"].replace("%", ""))
-                nueva_razon = evals_proyectadas[0].get("razon_del_match", "")
-                brechas_restantes = evals_proyectadas[0].get("brechas_identificadas", "")
-            except ValueError:
-                pass
+            score_proy = parse_match_score(evals_proyectadas[0].get("match_score"))
+            nueva_razon = evals_proyectadas[0].get("razon_del_match", "")
+            brechas_restantes = evals_proyectadas[0].get("brechas_identificadas", "") or ""
 
         # Asegurar proyección lógica
         incremento = max(0, score_proy - score_orig)
