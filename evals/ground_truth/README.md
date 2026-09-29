@@ -56,6 +56,15 @@ Cada corrida deja `resultados/<fecha>_<predictor>_<modelo>.md` (resumen) y `.jso
 Detalle del baseline: `resultados/2026-09-29_0911_baseline_keywords.md`.
 Detalle del agente: `resultados/2026-09-29_1337_agente_openai-gpt-oss-20b.md`.
 
+### Lectura del resultado (corrida real, 3 corridas)
+
+- **El LLM gana en calibración, no en orden.** `hit@1` sube de 10 % (baseline) a 90 %: el agente pone la vacante correcta de primera *y* con un score que supera el umbral. En `rank@1` el baseline (100 %) no pierde contra el agente (96.7 %): en este dataset ordenar por palabras clave ya funciona.
+- **Lo que sí se sostiene en las 3 corridas:** grounding 100 % (nada inventado), 0 % falsos positivos, y los dos casos sin match (enfermera e inyección) terminaron sin recomendaciones.
+- **La métrica NO es estable** según el criterio definido: estabilidad del top-1 83.3 % (< 90 %) y desviación de `hit@1` 8.2 % (> 5 %). El score top-1 varía en promedio 15 puntos entre corridas.
+- **De dónde sale la inestabilidad:** 2 de 12 casos.
+  - `gt_c02_analitica_datos`: en la corrida 2 el top-1 bajó a 30 % y el sistema pasó a perfilamiento; en las corridas 1 y 3 dio 70 % y 85 %.
+  - `gt_c05_ingenieria_datos`: 40 % / 30 % / 80 %, y en la corrida 3 el top-1 cambió a gt07 (aceptable, no relevante). En la corrida 1 quedó justo en el umbral.
+  - En la corrida 2 esos dos casos tardaron ~30 s contra ~4-7 s de las otras, lo que sugiere reintentos por rate limit y posible cambio al modelo de respaldo (`FALLBACK_MODELS`). La corrida no registra qué modelo respondió, así que esto es una hipótesis, no un hallazgo.
 
 ## Known failures / límites conocidos
 
@@ -67,4 +76,5 @@ Detalle del agente: `resultados/2026-09-29_1337_agente_openai-gpt-oss-20b.md`.
 ## Next hypothesis
 
 1. Agregar casos donde el CV y la vacante no comparten palabras (sinónimos en español vs requisitos en inglés). Ahí es donde el baseline debería fallar y el LLM demostrar su ventaja semántica.
-2. Si `estabilidad_top1 < 90 %`, cambiar una sola cosa (por ejemplo fijar `seed` o quitar el fallback de modelos durante los evals) y comparar antes/después.
+2. **Inestabilidad (medida: 83.3 % < 90 %).** Cambiar una sola cosa y volver a correr 3 veces: registrar qué modelo respondió cada llamada y desactivar el fallback de modelos durante los evals. Si la estabilidad sube a ≥ 90 %, la causa era el cambio de modelo; si no, probar después una rúbrica de score más explícita en el prompt de ranking.
+3. Los casos que quedan cerca del umbral (40 %) son los que más cambian de resultado; vale la pena reportar cuántos casos quedan a menos de 10 puntos del umbral.
