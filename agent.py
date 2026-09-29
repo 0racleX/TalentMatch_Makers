@@ -56,12 +56,9 @@ class TalentMatchMultiAgent:
         llm_provider: Optional[LLMProviderPort] = None
     ):
         self.model = model or os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
-        if llm_provider is not None:
-            self.llm_provider = llm_provider
-            self.client = getattr(llm_provider, "client", None)
-        else:
-            self.llm_provider = GroqLLMAdapter(model=self.model)
-            self.client = getattr(self.llm_provider, "client", None)
+        # No se toca `.client` aqui: el adaptador de Groq lo crea solo cuando
+        # se hace la primera llamada real al modelo.
+        self.llm_provider = llm_provider or GroqLLMAdapter(model=self.model)
         self.vacantes = cargar_vacantes()
 
     def _call_groq_json(self, prompt: str, temperature: float = 0.0) -> dict:
