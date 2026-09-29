@@ -21,6 +21,7 @@ class TestEvaluarCaso(unittest.TestCase):
     def test_relevante_bajo_umbral_no_cuenta(self):
         r = evaluar_caso(CASO_MATCH, pred("c1", ("a", 30)))
         self.assertFalse(r["hit@1"])
+        self.assertTrue(r["rank@1"])  # el orden es correcto, la calibracion no
         self.assertTrue(r["aceptable@1"])  # aceptable@1 mide orden, no umbral
 
     def test_relevante_en_segundo_lugar(self):

@@ -7,7 +7,10 @@ Una "prediccion" es lo que el sistema recomendo para un caso en UNA corrida:
 `id` es None cuando el titulo/link recomendado no existe en el dataset (alucinacion).
 
 Metricas por corrida
+    rank@1             top-1 esta en `relevantes`, sin mirar el score       (casos con match)
+                       -> mide solo el ORDEN (ranking)
     hit@1              top-1 esta en `relevantes` y supera el umbral       (casos con match)
+                       -> mide orden + CALIBRACION del score (lo que ve el usuario)
     hit@3              algun relevante en el top-3 supera el umbral        (casos con match)
     aceptable@1        top-1 esta en relevantes o aceptables               (casos con match)
     rechazo_correcto   ningun score supera el umbral                        (casos sin match)
@@ -58,6 +61,7 @@ def evaluar_caso(caso: Dict[str, Any], pred: Dict[str, Any], umbral: int = UMBRA
 
     if caso["debe_haber_match"]:
         primero = top[0] if top else None
+        r["rank@1"] = bool(error is None and primero and primero.get("id") in relevantes)
         r["hit@1"] = bool(error is None and primero and primero.get("id") in relevantes and _sobre_umbral(primero, umbral))
         r["hit@3"] = bool(error is None and any(t.get("id") in relevantes and _sobre_umbral(t, umbral) for t in top))
         r["aceptable@1"] = bool(error is None and primero and primero.get("id") in (relevantes | aceptables))
@@ -75,6 +79,7 @@ def resumir_corrida(resultados: List[Dict[str, Any]]) -> Dict[str, Any]:
     sin_match = [r for r in resultados if not r["debe_haber_match"]]
     return {
         "casos": len(resultados),
+        "rank@1": _tasa([r["rank@1"] for r in con_match]),
         "hit@1": _tasa([r["hit@1"] for r in con_match]),
         "hit@3": _tasa([r["hit@3"] for r in con_match]),
         "aceptable@1": _tasa([r["aceptable@1"] for r in con_match]),
@@ -85,7 +90,7 @@ def resumir_corrida(resultados: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
-METRICAS = ("hit@1", "hit@3", "aceptable@1", "rechazo_correcto", "falsos_positivos", "grounding")
+METRICAS = ("rank@1", "hit@1", "hit@3", "aceptable@1", "rechazo_correcto", "falsos_positivos", "grounding")
 
 
 def resumir_corridas(corridas: List[List[Dict[str, Any]]]) -> Dict[str, Any]:

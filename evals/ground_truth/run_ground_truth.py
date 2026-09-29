@@ -122,7 +122,7 @@ def reporte_markdown(meta: Dict[str, Any], salida: Dict[str, Any], casos: List[D
         "| Metrica | Media | Desv. | Min | Max |",
         "|---|---|---|---|---|",
     ]
-    for m in ("hit@1", "hit@3", "aceptable@1", "rechazo_correcto", "falsos_positivos", "grounding"):
+    for m in ("rank@1", "hit@1", "hit@3", "aceptable@1", "rechazo_correcto", "falsos_positivos", "grounding"):
         v = r[m]
         lineas.append(f"| {m} | {_pct(v['media'])} | {_pct(v['std'])} | {_pct(v['min'])} | {_pct(v['max'])} |")
     lineas += [
@@ -206,7 +206,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         parcial.unlink()
 
     r = salida["resumen"]
-    print(f"hit@1 {_pct(r['hit@1']['media'])} ± {_pct(r['hit@1']['std'])} | "
+    print(f"rank@1 {_pct(r['rank@1']['media'])} | hit@1 {_pct(r['hit@1']['media'])} ± {_pct(r['hit@1']['std'])} | "
           f"grounding {_pct(r['grounding']['media'])} | estabilidad top-1 {_pct(r['estabilidad_top1'])} | "
           f"errores {r['errores_totales']}")
     print(f"Resultados: {carpeta / (nombre + '.md')}")
