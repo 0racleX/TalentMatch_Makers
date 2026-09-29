@@ -18,9 +18,10 @@ INJECTION_PATTERNS = [
     r"ignor[ae]\s+(all\s+|todas\s+(las\s+)?)?(previous\s+|tus\s+|las\s+)?(reglas|instrucciones|instructions)",
     r"olvida\s+(las|todas\s+las|tus)?\s*(instrucciones|reglas)",
     r"forget\s+(all\s+)?(previous\s+)?(instructions|rules)",
-    r"(dame|give\s+me|set)\s+(un\s+)?(match[_\s]?score\s*(to\s*)?)?100%",
-    r"match[_\s]?score\s*(to\s*|de\s*|:\s*)?100%",
-    r"system\s*prompt",
+    r"(?:dame|give\s+me|set|pon|asigna|force)\s+(?:un\s+)?(?:match[_\s]?score\s*(?:to|de|en|:)?\s*)?\d{2,3}%",
+    r"match[_\s]?score\s*(?:to|de|en|:)?\s*\d{2,3}%",
+    r"system\s*(?:prompt|instruction)",
+    r"instrucci[oó]n\s+(?:del\s+)?sistema",
     r"act\s+as\s+(an?\s+)?unrestricted",
     r"hazte\s+pasar\s+por",
     r"you\s+are\s+now\s+in\s+developer\s+mode",
@@ -28,7 +29,8 @@ INJECTION_PATTERNS = [
     r"pretend\s+you\s+are",
     r"override\s+system",
     r"bypass\s+rules",
-    r"prompt\s+injection"
+    r"(?:\[\s*)?prompt\s+injection\s*[:\]]",
+    r"\b(?:execute|run|payload|attack)\s+prompt\s+injection\b"
 ]
 
 COMPILED_PATTERNS = [re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS]

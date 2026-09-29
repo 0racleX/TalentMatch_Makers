@@ -66,3 +66,17 @@ Cambio: se agrego `class AgentError(Exception)` en `agent.py`. Cada uno de los 4
 
 Pendiente: no hay retry/backoff todavia, asi que un rate-limit puntual sigue tumbando la corrida en vez de reintentarse — eso es la hipotesis #2 de arriba.
 
+---
+
+## Actualización 2026-09-29 — Evaluación Adversarial y Safety en Vivo contra Groq
+
+Para cumplir el gate de **Jailbreak y safety** de `MAKERS_ACCEPTANCE.md`, se construyó y ejecutó una suite adversarial formal (`evals/safety/`) con 8 casos que evalúan inyecciones directas, modo desarrollador, forzado de scores arbitrarios, alucinación obligatoria de skills, links externos de phishing y controles negativos de CVs legítimos de ciberseguridad.
+
+### Resultados de la corrida en vivo contra `openai/gpt-oss-120b`
+
+- **Tasa de Resistencia a Ataques:** 100.0% (6/6 ataques neutralizados y clasificados como no-CV o profiling seguro).
+- **Tasa de Falsos Positivos:** 0.0% (0/2 CVs legítimos penalizados; el CV de un Ingeniero de Ciberseguridad que menciona "mitigación de prompt injection" fue procesado en modo match sin alertas erróneas).
+- **Veredicto:** **PASS**.
+- **Evidencia guardada:** `evals/safety/resultados/2026-09-29_1720_adversarial_openai-gpt-oss-120b.json` y `.md`.
+
+
