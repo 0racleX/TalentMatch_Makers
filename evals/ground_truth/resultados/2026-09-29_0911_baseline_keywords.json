@@ -1,0 +1,748 @@
+{
+  "meta": {
+    "fecha": "2026-09-29_0911",
+    "predictor": "baseline",
+    "modelo": "keywords",
+    "runs": 1,
+    "n_vacantes": 13,
+    "fuente": "Tablero publico de Greenhouse de Sezzle (API: https://boards-api.greenhouse.io/v1/boards/sezzle/jobs)",
+    "fecha_consulta": "2026-09-29",
+    "casos": [
+      "gt_c01_seguridad_estudiante",
+      "gt_c02_analitica_datos",
+      "gt_c03_frontend_mobile",
+      "gt_c04_fullstack_junior",
+      "gt_c05_ingenieria_datos",
+      "gt_c06_diseno_ux",
+      "gt_c07_ia_ml",
+      "gt_c08_contador",
+      "gt_c09_soporte_ti",
+      "gt_c10_enfermera_sin_match",
+      "gt_c11_senior_backend",
+      "gt_c12_inyeccion_senior"
+    ]
+  },
+  "predicciones": [
+    [
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [
+          {
+            "id": "gt04",
+            "titulo": "Security Infrastructure Engineer Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7694916003",
+            "score": 39
+          },
+          {
+            "id": "gt03",
+            "titulo": "Data Infrastructure Engineer Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7694238003",
+            "score": 15
+          },
+          {
+            "id": "gt07",
+            "titulo": "A.I. Engineering Intern (Colombia)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7750230003",
+            "score": 15
+          }
+        ],
+        "caso_id": "gt_c01_seguridad_estudiante",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [
+          {
+            "id": "gt09",
+            "titulo": "Product Data Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6685976003",
+            "score": 20
+          },
+          {
+            "id": "gt02",
+            "titulo": "Data Analyst",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7826885003",
+            "score": 18
+          },
+          {
+            "id": "gt07",
+            "titulo": "A.I. Engineering Intern (Colombia)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7750230003",
+            "score": 10
+          }
+        ],
+        "caso_id": "gt_c02_analitica_datos",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [
+          {
+            "id": "gt05",
+            "titulo": "Mobile Engineer (Colombia, All Levels)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6110239003",
+            "score": 39
+          },
+          {
+            "id": "gt11",
+            "titulo": "Senior Software Engineer (Colombia)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6110245003",
+            "score": 14
+          },
+          {
+            "id": "gt06",
+            "titulo": "Product Design Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7559727003",
+            "score": 7
+          }
+        ],
+        "caso_id": "gt_c03_frontend_mobile",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [
+          {
+            "id": "gt01",
+            "titulo": "Junior Software Engineer (Colombia)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6110238003",
+            "score": 14
+          },
+          {
+            "id": "gt10",
+            "titulo": "Senior Site Reliability Engineer",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7611783003",
+            "score": 5
+          },
+          {
+            "id": "gt03",
+            "titulo": "Data Infrastructure Engineer Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7694238003",
+            "score": 4
+          }
+        ],
+        "caso_id": "gt_c04_fullstack_junior",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [
+          {
+            "id": "gt03",
+            "titulo": "Data Infrastructure Engineer Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7694238003",
+            "score": 15
+          },
+          {
+            "id": "gt04",
+            "titulo": "Security Infrastructure Engineer Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7694916003",
+            "score": 11
+          },
+          {
+            "id": "gt01",
+            "titulo": "Junior Software Engineer (Colombia)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6110238003",
+            "score": 10
+          }
+        ],
+        "caso_id": "gt_c05_ingenieria_datos",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [
+          {
+            "id": "gt06",
+            "titulo": "Product Design Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7559727003",
+            "score": 20
+          },
+          {
+            "id": "gt05",
+            "titulo": "Mobile Engineer (Colombia, All Levels)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6110239003",
+            "score": 6
+          }
+        ],
+        "caso_id": "gt_c06_diseno_ux",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [
+          {
+            "id": "gt07",
+            "titulo": "A.I. Engineering Intern (Colombia)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7750230003",
+            "score": 15
+          },
+          {
+            "id": "gt03",
+            "titulo": "Data Infrastructure Engineer Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7694238003",
+            "score": 12
+          },
+          {
+            "id": "gt09",
+            "titulo": "Product Data Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6685976003",
+            "score": 10
+          }
+        ],
+        "caso_id": "gt_c07_ia_ml",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [
+          {
+            "id": "gt12",
+            "titulo": "Accountant",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7903264003",
+            "score": 24
+          }
+        ],
+        "caso_id": "gt_c08_contador",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [
+          {
+            "id": "gt08",
+            "titulo": "IT Operations Analyst (Colombia)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6066974003",
+            "score": 21
+          },
+          {
+            "id": "gt05",
+            "titulo": "Mobile Engineer (Colombia, All Levels)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6110239003",
+            "score": 6
+          },
+          {
+            "id": "gt13",
+            "titulo": "AML Compliance Analyst",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7855067003",
+            "score": 5
+          }
+        ],
+        "caso_id": "gt_c09_soporte_ti",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [],
+        "caso_id": "gt_c10_enfermera_sin_match",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "match",
+        "error": null,
+        "top": [
+          {
+            "id": "gt11",
+            "titulo": "Senior Software Engineer (Colombia)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6110245003",
+            "score": 43
+          },
+          {
+            "id": "gt04",
+            "titulo": "Security Infrastructure Engineer Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7694916003",
+            "score": 11
+          },
+          {
+            "id": "gt05",
+            "titulo": "Mobile Engineer (Colombia, All Levels)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6110239003",
+            "score": 11
+          }
+        ],
+        "caso_id": "gt_c11_senior_backend",
+        "corrida": 1,
+        "segundos": 0.0
+      },
+      {
+        "modo": "profiling",
+        "error": null,
+        "top": [
+          {
+            "id": "gt10",
+            "titulo": "Senior Site Reliability Engineer",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7611783003",
+            "score": 23
+          },
+          {
+            "id": "gt11",
+            "titulo": "Senior Software Engineer (Colombia)",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/6110245003",
+            "score": 14
+          },
+          {
+            "id": "gt04",
+            "titulo": "Security Infrastructure Engineer Intern",
+            "link": "https://job-boards.greenhouse.io/sezzle/jobs/7694916003",
+            "score": 6
+          }
+        ],
+        "caso_id": "gt_c12_inyeccion_senior",
+        "corrida": 1,
+        "segundos": 0.0
+      }
+    ]
+  ],
+  "resultados": [
+    [
+      {
+        "caso_id": "gt_c01_seguridad_estudiante",
+        "debe_haber_match": true,
+        "top_ids": [
+          "gt04",
+          "gt03",
+          "gt07"
+        ],
+        "top_scores": [
+          39,
+          15,
+          15
+        ],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rank@1": true,
+        "hit@1": false,
+        "hit@3": false,
+        "aceptable@1": true
+      },
+      {
+        "caso_id": "gt_c02_analitica_datos",
+        "debe_haber_match": true,
+        "top_ids": [
+          "gt09",
+          "gt02",
+          "gt07"
+        ],
+        "top_scores": [
+          20,
+          18,
+          10
+        ],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rank@1": true,
+        "hit@1": false,
+        "hit@3": false,
+        "aceptable@1": true
+      },
+      {
+        "caso_id": "gt_c03_frontend_mobile",
+        "debe_haber_match": true,
+        "top_ids": [
+          "gt05",
+          "gt11",
+          "gt06"
+        ],
+        "top_scores": [
+          39,
+          14,
+          7
+        ],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rank@1": true,
+        "hit@1": false,
+        "hit@3": false,
+        "aceptable@1": true
+      },
+      {
+        "caso_id": "gt_c04_fullstack_junior",
+        "debe_haber_match": true,
+        "top_ids": [
+          "gt01",
+          "gt10",
+          "gt03"
+        ],
+        "top_scores": [
+          14,
+          5,
+          4
+        ],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rank@1": true,
+        "hit@1": false,
+        "hit@3": false,
+        "aceptable@1": true
+      },
+      {
+        "caso_id": "gt_c05_ingenieria_datos",
+        "debe_haber_match": true,
+        "top_ids": [
+          "gt03",
+          "gt04",
+          "gt01"
+        ],
+        "top_scores": [
+          15,
+          11,
+          10
+        ],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rank@1": true,
+        "hit@1": false,
+        "hit@3": false,
+        "aceptable@1": true
+      },
+      {
+        "caso_id": "gt_c06_diseno_ux",
+        "debe_haber_match": true,
+        "top_ids": [
+          "gt06",
+          "gt05"
+        ],
+        "top_scores": [
+          20,
+          6
+        ],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rank@1": true,
+        "hit@1": false,
+        "hit@3": false,
+        "aceptable@1": true
+      },
+      {
+        "caso_id": "gt_c07_ia_ml",
+        "debe_haber_match": true,
+        "top_ids": [
+          "gt07",
+          "gt03",
+          "gt09"
+        ],
+        "top_scores": [
+          15,
+          12,
+          10
+        ],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rank@1": true,
+        "hit@1": false,
+        "hit@3": false,
+        "aceptable@1": true
+      },
+      {
+        "caso_id": "gt_c08_contador",
+        "debe_haber_match": true,
+        "top_ids": [
+          "gt12"
+        ],
+        "top_scores": [
+          24
+        ],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rank@1": true,
+        "hit@1": false,
+        "hit@3": false,
+        "aceptable@1": true
+      },
+      {
+        "caso_id": "gt_c09_soporte_ti",
+        "debe_haber_match": true,
+        "top_ids": [
+          "gt08",
+          "gt05",
+          "gt13"
+        ],
+        "top_scores": [
+          21,
+          6,
+          5
+        ],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rank@1": true,
+        "hit@1": false,
+        "hit@3": false,
+        "aceptable@1": true
+      },
+      {
+        "caso_id": "gt_c10_enfermera_sin_match",
+        "debe_haber_match": false,
+        "top_ids": [],
+        "top_scores": [],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rechazo_correcto": true
+      },
+      {
+        "caso_id": "gt_c11_senior_backend",
+        "debe_haber_match": true,
+        "top_ids": [
+          "gt11",
+          "gt04",
+          "gt05"
+        ],
+        "top_scores": [
+          43,
+          11,
+          11
+        ],
+        "modo": "match",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rank@1": true,
+        "hit@1": true,
+        "hit@3": true,
+        "aceptable@1": true
+      },
+      {
+        "caso_id": "gt_c12_inyeccion_senior",
+        "debe_haber_match": false,
+        "top_ids": [
+          "gt10",
+          "gt11",
+          "gt04"
+        ],
+        "top_scores": [
+          23,
+          14,
+          6
+        ],
+        "modo": "profiling",
+        "error": null,
+        "grounded": true,
+        "falsos_positivos": [],
+        "rechazo_correcto": true
+      }
+    ]
+  ],
+  "resumen": {
+    "corridas": 1,
+    "por_corrida": [
+      {
+        "casos": 12,
+        "rank@1": 1.0,
+        "hit@1": 0.1,
+        "hit@3": 0.1,
+        "aceptable@1": 1.0,
+        "rechazo_correcto": 1.0,
+        "falsos_positivos": 0.0,
+        "grounding": 1.0,
+        "errores": 0
+      }
+    ],
+    "rank@1": {
+      "media": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "hit@1": {
+      "media": 0.1,
+      "std": 0.0,
+      "min": 0.1,
+      "max": 0.1
+    },
+    "hit@3": {
+      "media": 0.1,
+      "std": 0.0,
+      "min": 0.1,
+      "max": 0.1
+    },
+    "aceptable@1": {
+      "media": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "rechazo_correcto": {
+      "media": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "falsos_positivos": {
+      "media": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "grounding": {
+      "media": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "errores_totales": 0,
+    "estabilidad_top1": 1.0,
+    "rango_score_top1": 0,
+    "estabilidad_por_caso": [
+      {
+        "caso_id": "gt_c01_seguridad_estudiante",
+        "top1_por_corrida": [
+          "gt04"
+        ],
+        "score_top1_por_corrida": [
+          39
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c02_analitica_datos",
+        "top1_por_corrida": [
+          "gt09"
+        ],
+        "score_top1_por_corrida": [
+          20
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c03_frontend_mobile",
+        "top1_por_corrida": [
+          "gt05"
+        ],
+        "score_top1_por_corrida": [
+          39
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c04_fullstack_junior",
+        "top1_por_corrida": [
+          "gt01"
+        ],
+        "score_top1_por_corrida": [
+          14
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c05_ingenieria_datos",
+        "top1_por_corrida": [
+          "gt03"
+        ],
+        "score_top1_por_corrida": [
+          15
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c06_diseno_ux",
+        "top1_por_corrida": [
+          "gt06"
+        ],
+        "score_top1_por_corrida": [
+          20
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c07_ia_ml",
+        "top1_por_corrida": [
+          "gt07"
+        ],
+        "score_top1_por_corrida": [
+          15
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c08_contador",
+        "top1_por_corrida": [
+          "gt12"
+        ],
+        "score_top1_por_corrida": [
+          24
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c09_soporte_ti",
+        "top1_por_corrida": [
+          "gt08"
+        ],
+        "score_top1_por_corrida": [
+          21
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c10_enfermera_sin_match",
+        "top1_por_corrida": [
+          null
+        ],
+        "score_top1_por_corrida": [
+          0
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c11_senior_backend",
+        "top1_por_corrida": [
+          "gt11"
+        ],
+        "score_top1_por_corrida": [
+          43
+        ],
+        "estable": true
+      },
+      {
+        "caso_id": "gt_c12_inyeccion_senior",
+        "top1_por_corrida": [
+          "gt10"
+        ],
+        "score_top1_por_corrida": [
+          23
+        ],
+        "estable": true
+      }
+    ],
+    "metrica_estable": true
+  }
+}
