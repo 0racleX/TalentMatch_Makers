@@ -51,9 +51,11 @@ Cada corrida deja `resultados/<fecha>_<predictor>_<modelo>.md` (resumen) y `.jso
 | Predictor | Corridas | rank@1 | hit@1 | rechazo correcto | falsos positivos | grounding | estabilidad top-1 |
 |---|---|---|---|---|---|---|---|
 | Baseline palabras clave | 1 | 100 % | 10 % | 100 % | 0 % | 100 % | 100 % (determinista) |
-| Agente `openai/gpt-oss-20b` | 3 | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente |
+| Agente `openai/gpt-oss-20b` | 3 | 96.7 % | 90.0 % ± 8.2 % | 100 % | 0 % | 100 % | 83.3 % |
 
 Detalle del baseline: `resultados/2026-09-29_0911_baseline_keywords.md`.
+Detalle del agente: `resultados/2026-09-29_1337_agente_openai-gpt-oss-20b.md`.
+
 
 ## Known failures / límites conocidos
 
