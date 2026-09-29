@@ -3,4 +3,5 @@ __pycache__/
 .env
 .cache/
 *.db
-.pytest_cache/evals/ground_truth/resultados/*.parcial.json
+.pytest_cache/
+evals/ground_truth/resultados/*.parcial.json
