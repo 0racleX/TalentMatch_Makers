@@ -14,6 +14,10 @@ from api.retry import with_retry, DailyTokenLimitExceeded
 
 logger = logging.getLogger("talentmatch.adapters.groq")
 
+
+class LLMConfigurationError(RuntimeError):
+    """El adaptador de Groq se intento usar sin GROQ_API_KEY configurada."""
+
 FALLBACK_MODELS = [
     "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
@@ -32,9 +36,25 @@ class GroqLLMAdapter(LLMProviderPort):
 
     def __init__(self, model: Optional[str] = None, client: Optional[Groq] = None):
         self.model = model or os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
-        self.client = client or Groq()
+        # El cliente se crea de forma perezosa (lazy): construir el adaptador no
+        # exige credenciales. Asi la app, el CI y los tests pueden importar y
+        # armar el agente sin GROQ_API_KEY; la key solo se pide al llamar al modelo.
+        self._client = client
+
+    @property
+    def client(self) -> Groq:
+        if self._client is None:
+            api_key = os.getenv("GROQ_API_KEY")
+            if not api_key:
+                raise LLMConfigurationError(
+                    "GROQ_API_KEY no esta configurada. Definela en .env para llamar al "
+                    "modelo real, o inyecta un LLMProviderPort falso en tests."
+                )
+            self._client = Groq(api_key=api_key)
+        return self._client
 
     def generate_json(self, prompt: str, temperature: float = 0.0) -> Dict[str, Any]:
+        client = self.client  # falla rapido y claro si no hay API key (sin reintentos)
         candidate_models: List[str] = []
         for m in [self.model] + FALLBACK_MODELS:
             if m and m not in candidate_models:
@@ -43,7 +63,7 @@ class GroqLLMAdapter(LLMProviderPort):
         last_error = None
         for current_model in candidate_models:
             def _invoke():
-                response = self.client.chat.completions.create(
+                response = client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
                     model=current_model,
                     temperature=temperature,
@@ -93,6 +113,7 @@ class GroqLLMAdapter(LLMProviderPort):
         raise RuntimeError(f"Falló la inferencia LLM en todos los modelos disponibles: {last_error}")
 
     def generate_text(self, prompt: str, temperature: float = 0.7) -> str:
+        client = self.client
         candidate_models: List[str] = []
         for m in [self.model] + FALLBACK_MODELS:
             if m and m not in candidate_models:
@@ -101,7 +122,7 @@ class GroqLLMAdapter(LLMProviderPort):
         last_error = None
         for current_model in candidate_models:
             def _invoke():
-                response = self.client.chat.completions.create(
+                response = client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
                     model=current_model,
                     temperature=temperature

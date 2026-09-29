@@ -1,22 +1,21 @@
 import os
+import re
 import json
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
-from groq import Groq
 
 from api.models import (
     TalentMatchOutput, Recomendacion, PerfilCandidato, RecursoAprendizaje
 )
-import re
-from api.retry import with_retry, DailyTokenLimitExceeded
 from api.security import detect_prompt_injection, classify_document_heuristics
-from db.repository import (
-    get_all_vacantes, get_vacante_by_id, get_recursos_para_brechas, record_audit
-)
 from core.ports.llm_port import LLMProviderPort
-from adapters.outbound.groq_adapter import GroqLLMAdapter, FALLBACK_MODELS
+from core.ports.repository_port import VacanteRepositoryPort, AuditRepositoryPort
+
+# Nota de arquitectura: este modulo (dominio) NO importa groq, sqlalchemy ni
+# db.repository. Solo conoce los puertos. Los adaptadores concretos se crean
+# por defecto dentro de __init__ (import perezoso) o se inyectan desde afuera.
 
 load_dotenv()
 logger = logging.getLogger("talentmatch.agent")
@@ -29,40 +28,80 @@ class AgentError(Exception):
     """Falló la llamada a Groq o el parseo de su respuesta."""
 
 
-def cargar_vacantes() -> list:
-    """Carga vacantes desde la base de datos con fallback al archivo JSON."""
-    try:
-        vacantes = get_all_vacantes()
-        if vacantes:
-            return vacantes
-    except Exception as e:
-        logger.warning("No se pudo cargar desde base de datos: %s. Usando JSON.", e)
+def parse_match_score(valor: Any) -> int:
+    """
+    Normaliza el match_score que devuelve el modelo a un entero 0-100.
+
+    El modelo no siempre respeta el formato "85%": puede devolver 85, 85.0,
+    "85", "85.5 %" o incluso "150%". Antes, un entero hacia fallar el formatter
+    con AttributeError (int no tiene .replace) y un valor >100 hacia fallar la
+    validacion de Pydantic, tumbando la respuesta completa.
+    """
+    if isinstance(valor, bool) or valor is None:
+        return 0
+    if isinstance(valor, (int, float)):
+        numero = float(valor)
+    else:
+        m = re.search(r"-?\d+(?:[.,]\d+)?", str(valor))
+        if not m:
+            return 0
+        numero = float(m.group(0).replace(",", "."))
+    return max(0, min(100, int(round(numero))))
+
+
+def cargar_vacantes(repo: Optional[VacanteRepositoryPort] = None) -> list:
+    """Carga vacantes desde el puerto de repositorio con fallback al archivo JSON."""
+    if repo is not None:
+        try:
+            vacantes = repo.get_all_vacantes()
+            if vacantes:
+                return vacantes
+        except Exception as e:
+            logger.warning("No se pudo cargar desde el repositorio: %s. Usando JSON.", e)
 
     with open(VACANTES_PATH, encoding="utf-8") as f:
         return json.load(f)
-
-
-FALLBACK_MODELS = [
-    "openai/gpt-oss-20b",
-    "qwen/qwen3.8-27b",
-    "openai/gpt-oss-120b"
-]
 
 
 class TalentMatchMultiAgent:
     def __init__(
         self,
         model: Optional[str] = None,
-        llm_provider: Optional[LLMProviderPort] = None
+        llm_provider: Optional[LLMProviderPort] = None,
+        vacante_repo: Optional[VacanteRepositoryPort] = None,
+        audit_repo: Optional[AuditRepositoryPort] = None
     ):
+        """
+        Todas las dependencias externas entran por puertos (Dependency Inversion).
+        Si no se inyectan, se usan los adaptadores de produccion:
+        GroqLLMAdapter y SQLAlchemyRepositoryAdapter.
+        """
         self.model = model or os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
-        if llm_provider is not None:
-            self.llm_provider = llm_provider
-            self.client = getattr(llm_provider, "client", None)
-        else:
-            self.llm_provider = GroqLLMAdapter(model=self.model)
-            self.client = getattr(self.llm_provider, "client", None)
-        self.vacantes = cargar_vacantes()
+
+        if llm_provider is None:
+            from adapters.outbound.groq_adapter import GroqLLMAdapter
+            # No se toca `.client` aqui: el adaptador lo crea en la primera llamada real.
+            llm_provider = GroqLLMAdapter(model=self.model)
+        self.llm_provider = llm_provider
+
+        if vacante_repo is None or audit_repo is None:
+            from adapters.outbound.db_repository_adapter import SQLAlchemyRepositoryAdapter
+            repo_bd = SQLAlchemyRepositoryAdapter()
+            vacante_repo = vacante_repo or repo_bd
+            audit_repo = audit_repo or repo_bd
+        self.vacante_repo = vacante_repo
+        self.audit_repo = audit_repo
+
+        self.vacantes = cargar_vacantes(self.vacante_repo)
+
+    def _registrar_auditoria(self, modo: str, num_recs: int, top_score: int, is_suspicious: bool) -> None:
+        """La auditoria nunca debe tumbar una respuesta al candidato."""
+        try:
+            self.audit_repo.record_audit(
+                modo=modo, num_recs=num_recs, top_score=top_score, is_suspicious=is_suspicious
+            )
+        except Exception as e:
+            logger.debug("No se pudo registrar auditoria: %s", e)
 
     def _call_groq_json(self, prompt: str, temperature: float = 0.0) -> dict:
         """
@@ -252,7 +291,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
             data = self._call_groq_json(prompt, temperature=0.0)
             # Vincular habilidades recomendadas con recursos de aprendizaje (Camino a la vacante)
             habilidades_rec = data.get("habilidades_recomendadas", [])
-            recursos_raw = get_recursos_para_brechas(" ".join(habilidades_rec))
+            recursos_raw = self.vacante_repo.get_recursos_para_brechas(", ".join(habilidades_rec))
             recursos_modelos = [RecursoAprendizaje(**r) for r in recursos_raw]
 
             return PerfilCandidato(
@@ -283,17 +322,13 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
             if not vacante:
                 continue
 
-            score_str = eval_item.get("match_score", "0%")
-            try:
-                score_num = int(score_str.replace("%", "").strip())
-            except ValueError:
-                score_num = 0
+            score_num = parse_match_score(eval_item.get("match_score"))
 
             link = vacante.get("link") or None  # null si no existe, NUNCA inventado
             brechas_str = eval_item.get("brechas_identificadas", "")
 
             # Camino a la vacante: Buscar recursos concretos para las brechas
-            recursos_db = get_recursos_para_brechas(brechas_str)
+            recursos_db = self.vacante_repo.get_recursos_para_brechas(brechas_str)
             recursos_modelos = [RecursoAprendizaje(**r) for r in recursos_db]
 
             rec = Recomendacion(
@@ -338,15 +373,12 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
                 tipo_documento=doc_validation.doc_type,
                 mensaje_validacion=doc_validation.reason
             )
-            try:
-                record_audit(
-                    modo="documento_invalido",
-                    num_recs=0,
-                    top_score=0,
-                    is_suspicious=check_seguridad.is_suspicious
-                )
-            except Exception:
-                pass
+            self._registrar_auditoria(
+                modo="documento_invalido",
+                num_recs=0,
+                top_score=0,
+                is_suspicious=check_seguridad.is_suspicious
+            )
             return output
 
         # Paso 1: Extraer perfil del candidato y validar autenticidad con LLM
@@ -369,15 +401,12 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
                 tipo_documento=tipo_doc,
                 mensaje_validacion=motivo
             )
-            try:
-                record_audit(
-                    modo="documento_invalido",
-                    num_recs=0,
-                    top_score=0,
-                    is_suspicious=check_seguridad.is_suspicious
-                )
-            except Exception:
-                pass
+            self._registrar_auditoria(
+                modo="documento_invalido",
+                num_recs=0,
+                top_score=0,
+                is_suspicious=check_seguridad.is_suspicious
+            )
             return output
 
         # Paso 2: Buscar vacantes relevantes en la BD interna
@@ -390,12 +419,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
         recomendaciones = self.formatter_agent(vacantes_candidatas, evaluaciones)
 
         # Determinar si hubo match suficiente
-        max_score = 0
-        if recomendaciones:
-            try:
-                max_score = max(int(r.match_score.replace("%", "")) for r in recomendaciones)
-            except Exception:
-                max_score = 0
+        max_score = max((parse_match_score(r.match_score) for r in recomendaciones), default=0)
 
         if recomendaciones and max_score >= UMBRAL_MATCH:
             output = TalentMatchOutput(
@@ -423,15 +447,12 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
             )
 
         # Registrar auditoría para el Trust Center
-        try:
-            record_audit(
-                modo=output.modo,
-                num_recs=len(output.recomendaciones),
-                top_score=max_score,
-                is_suspicious=check_seguridad.is_suspicious
-            )
-        except Exception:
-            pass
+        self._registrar_auditoria(
+            modo=output.modo,
+            num_recs=len(output.recomendaciones),
+            top_score=max_score,
+            is_suspicious=check_seguridad.is_suspicious
+        )
 
         return output
 
@@ -447,19 +468,14 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
         Responde a la pregunta que ni LinkedIn ni Magneto pueden responder:
         'Si aprendo X y Y, ¿cuánto sube mi match y por qué?'
         """
-        vacante = get_vacante_by_id(vacante_id)
+        vacante = self.vacante_repo.get_vacante_by_id(vacante_id)
         if not vacante:
             raise AgentError(f"Vacante con ID '{vacante_id}' no encontrada.")
 
         # Re-evaluar con el CV original
         perfil = self.extraction_agent(cv_text)
         evals_originales = self.ranking_agent(cv_text, perfil, [vacante])
-        score_orig = 0
-        if evals_originales:
-            try:
-                score_orig = int(evals_originales[0]["match_score"].replace("%", ""))
-            except ValueError:
-                score_orig = 0
+        score_orig = parse_match_score(evals_originales[0].get("match_score")) if evals_originales else 0
 
         # Simular CV enriquecido con las nuevas habilidades certificadas
         cv_enriquecido = f"""{cv_text}
@@ -474,12 +490,9 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
         nueva_razon = ""
         brechas_restantes = ""
         if evals_proyectadas:
-            try:
-                score_proy = int(evals_proyectadas[0]["match_score"].replace("%", ""))
-                nueva_razon = evals_proyectadas[0].get("razon_del_match", "")
-                brechas_restantes = evals_proyectadas[0].get("brechas_identificadas", "")
-            except ValueError:
-                pass
+            score_proy = parse_match_score(evals_proyectadas[0].get("match_score"))
+            nueva_razon = evals_proyectadas[0].get("razon_del_match", "")
+            brechas_restantes = evals_proyectadas[0].get("brechas_identificadas", "") or ""
 
         # Asegurar proyección lógica
         incremento = max(0, score_proy - score_orig)

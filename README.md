@@ -128,7 +128,7 @@ docker compose up --build
 
 ## Tests Unitarios Deterministas (0 costo de API)
 
-Ejecuta la suite completa de 18 pruebas unitarias deterministas en 1 segundo:
+Ejecuta la suite determinista (82 pruebas, sin `GROQ_API_KEY`: los tests inyectan `FakeLLMProvider` por el puerto `LLMProviderPort`):
 
 ```bash
 python -m unittest discover tests -v
@@ -144,6 +144,16 @@ Ejecuta los 12 casos de evaluación contra el agente (con soporte de cache deter
 python -c "from api.eval_runner import run_all_evals; print(run_all_evals())"
 ```
 O directamente desde el frontend en la pestaña **Dashboard de Evals**.
+
+### Ground truth con vacantes reales
+
+12 CVs etiquetados contra 13 vacantes reales publicadas en Colombia, con métricas `rank@1`, `hit@1`, `grounding` y estabilidad entre corridas, más un baseline sin IA para comparar:
+
+```bash
+python -m evals.ground_truth.run_ground_truth --runs 3
+```
+
+Detalle, resultados y límites conocidos en [`evals/ground_truth/README.md`](evals/ground_truth/README.md).
 
 ---
 

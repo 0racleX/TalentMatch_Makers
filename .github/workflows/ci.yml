@@ -2,7 +2,7 @@ name: TalentMatch CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, "dev/**", makers/review ]
   pull_request:
     branches: [ main, master ]
 
@@ -31,9 +31,14 @@ jobs:
           python -m db.seed
 
       - name: Run Deterministic Unit Tests
+        env:
+          # Vacia a proposito: los tests usan FakeLLMProvider y deben pasar sin secretos
+          GROQ_API_KEY: ""
         run: |
           python -m unittest discover tests -v
 
       - name: Verify Health Endpoint Syntax
+        env:
+          GROQ_API_KEY: ""
         run: |
           python -c "import api.main; print('FastAPI loaded successfully without runtime issues')"

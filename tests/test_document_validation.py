@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from api.security import classify_document_heuristics, DocumentValidationResult
 from agent import TalentMatchMultiAgent
 from api.models import TalentMatchOutput
+from tests.fakes import FakeLLMProvider, FakeRepositorio
 
 
 class TestDocumentValidation(unittest.TestCase):
@@ -124,9 +125,9 @@ class TestDocumentValidation(unittest.TestCase):
         self.assertEqual(resultado.doc_type, "curriculum_vitae")
 
     def test_agent_run_bloquea_practica_sin_llm(self):
-        agente = TalentMatchMultiAgent()
-        # Mock client to guarantee no external API calls are made
-        agente._call_groq_json = MagicMock(side_effect=AssertionError("No debería llamar a Groq"))
+        # LLM falso sin respuestas: si el pipeline llamara al modelo, el test falla
+        fake_llm = FakeLLMProvider()
+        agente = TalentMatchMultiAgent(llm_provider=fake_llm, audit_repo=FakeRepositorio([]))
 
         texto_practica = """
         Práctica de laboratorio #2: Redes y Telecomunicaciones
@@ -143,7 +144,7 @@ class TestDocumentValidation(unittest.TestCase):
         self.assertEqual(len(output.recomendaciones), 0)
         self.assertIsNone(output.perfil_candidato)
         self.assertIn("Práctica de Laboratorio", output.mensaje_validacion)
-        agente._call_groq_json.assert_not_called()
+        self.assertEqual(fake_llm.llamadas, 0)
 
 
 if __name__ == "__main__":

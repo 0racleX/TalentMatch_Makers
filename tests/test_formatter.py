@@ -1,11 +1,14 @@
 import unittest
 from agent import TalentMatchMultiAgent
+from tests.fakes import FakeLLMProvider
 
 
 class TestFormatterAgent(unittest.TestCase):
     def setUp(self):
-        # Instanciar el agente sin ejecutar llamadas a Groq
-        self.agent = TalentMatchMultiAgent()
+        # El formatter es determinista: inyectamos un LLM falso sin respuestas,
+        # asi cualquier llamada accidental al modelo hace fallar el test.
+        self.fake_llm = FakeLLMProvider()
+        self.agent = TalentMatchMultiAgent(llm_provider=self.fake_llm)
         self.mock_vacantes = [
             {
                 "id": "v001",

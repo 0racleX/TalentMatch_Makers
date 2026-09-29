@@ -19,25 +19,25 @@ class SQLAlchemyRepositoryAdapter(VacanteRepositoryPort, AuditRepositoryPort):
     def get_vacante_by_id(self, vacante_id: str) -> Optional[Dict[str, Any]]:
         return db_repo.get_vacante_by_id(vacante_id)
 
-    def get_recursos_para_brechas(self, brechas: List[str]) -> List[Dict[str, Any]]:
-        return db_repo.get_recursos_para_brechas(brechas)
+    def get_recursos_para_brechas(self, brechas: str) -> List[Dict[str, Any]]:
+        # Tolerar una lista por compatibilidad: db.repository espera texto y con
+        # una lista fallaba en silencio devolviendo 0 recursos.
+        if isinstance(brechas, (list, tuple)):
+            brechas = ", ".join(str(b) for b in brechas)
+        return db_repo.get_recursos_para_brechas(brechas or "")
 
     def record_audit(
         self,
-        cv_hash: str,
         modo: str,
-        mejor_vacante_id: Optional[str],
-        mejor_score: Optional[int],
-        inyeccion_detectada: bool,
-        total_evaluadas: int
+        num_recs: int,
+        top_score: int,
+        is_suspicious: bool = False
     ) -> None:
         db_repo.record_audit(
-            cv_hash=cv_hash,
             modo=modo,
-            mejor_vacante_id=mejor_vacante_id,
-            mejor_score=mejor_score,
-            inyeccion_detectada=inyeccion_detectada,
-            total_evaluadas=total_evaluadas
+            num_recs=num_recs,
+            top_score=top_score,
+            is_suspicious=is_suspicious
         )
 
     def get_audit_metrics(self) -> Dict[str, Any]:

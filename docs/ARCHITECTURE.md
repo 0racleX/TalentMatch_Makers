@@ -64,6 +64,8 @@ flowchart TD
         A_Groq["GroqLLMAdapter<br/>(Backoff Exponencial, Jitter & Fallback TPD)"]
         A_PDF["PyMuPDFParserAdapter<br/>(fitz: Detección de Escaneados y Brochures)"]
         A_DB["SQLAlchemyRepositoryAdapter<br/>(SQLite / PostgreSQL & Cache SHA-256)"]
+        A_JSON["JsonRepositoryAdapter<br/>(dataset congelado para evals)"]
+        A_FAKE["FakeLLMProvider<br/>(tests/fakes.py, sin red)"]
     end
 
     UI --> API
@@ -79,7 +81,11 @@ flowchart TD
     P_LLM --> A_Groq
     P_Parser --> A_PDF
     P_Repo --> A_DB
+    P_Repo --> A_JSON
+    P_LLM --> A_FAKE
 ```
+
+> Detalle de cómo se inyecta cada puerto, qué estaba roto y cómo se verifica: ver la [sección 11](#11-puertos-y-adaptadores-en-la-práctica-evidencia-y-defensa).
 
 ---
 
@@ -289,26 +295,89 @@ El archivo [`evals/eval_cases.json`](file:///C:/Users/pc/Desktop/makers/TalentMa
 
 ## 9. Verificación y Resultados de Pruebas
 
-Toda la suite determinista de pruebas se ejecuta de forma continua sin costo de API:
+Toda la suite determinista se ejecuta sin costo de API y **sin `GROQ_API_KEY`** (el CI la deja vacía a propósito):
 
 ```bash
 python -m unittest discover tests -v
 ```
 
-**Resultado de Ejecución:**
-- **Total de pruebas:** 30 pruebas unitarias deterministas.
-- **Tiempo de ejecución:** ~2.0 segundos.
-- **Estado:** `OK (30/30 pasando al 100%)`.
-- **Cobertura:**
-  - `test_hexagonal_architecture.py`: 4 pruebas (contratos de puertos, DIP con mocks, detección de PDFs escaneados, adaptadores de repositorio).
-  - `test_document_validation.py`: 8 pruebas (clasificador heurístico, rechazo de guías de laboratorio, folletos, facturas).
-  - `test_security.py`: 12 pruebas (detección de prompt injection, rate limiting, validación de longitud).
-  - `test_formatter.py`: 2 pruebas (formateo de camino a la vacante y recomendaciones).
-  - `test_pathway_and_recruiter.py`: 3 pruebas (simulador interactivo de cierre de brechas y modo recruiter).
-  - `test_models.py`: 1 prueba (validación de modelos Pydantic).
+**Estado verificado (2026-09-29, rama `dev/manuela`):** 82 pruebas, `OK`, ~0.3 s.
+
+> Corrección: versiones anteriores de este documento decían "30/30 pasando". La revisión Makers del 2026-09-23 encontró 24 OK y 6 en error, porque esas pruebas creaban el cliente Groq real sin credencial. La causa y el arreglo están en la sección 11.
+
+| Archivo | Pruebas | Qué cubre |
+| :--- | :---: | :--- |
+| `test_groq_adapter_lazy.py` | 4 | Construir el adaptador/agente sin key; error claro al llamar sin key |
+| `test_pipeline_with_fake_llm.py` | 3 | Journey completo con LLM falso; vacante inventada descartada; perfilamiento |
+| `test_agent_ports.py` | 3 | El agente usa los repositorios inyectados; la auditoría pasa por el puerto |
+| `test_repository_contract.py` | 5 | Cada método del puerto de repositorio se llama de verdad contra la BD |
+| `test_architecture_boundaries.py` | 3 | Fitness test: el dominio no importa infraestructura |
+| `test_json_repository_adapter.py` | 3 | Adaptador de dataset para evals |
+| `test_match_score_parsing.py` | 2 | `match_score` numérico o fuera de rango no tumba la respuesta |
+| `test_ground_truth_*.py`, `test_baseline_keywords.py` | 29 | Dataset real, etiquetas, métricas, runner y baseline |
+| `test_hexagonal_architecture.py` | 4 | Herencia de puertos, DIP con mock, PDF, repositorio |
+| `test_document_validation.py` | 8 | Clasificador heurístico de documentos no-CV |
+| `test_security.py`, `test_models.py`, `test_eval_runner_logic.py` | 13 | Prompt injection, modelos Pydantic, lógica del eval runner |
+| `test_formatter.py`, `test_pathway_and_recruiter.py` | 5 | Formatter, simulador de brechas y modo recruiter |
 
 ---
 
 ## 10. Conclusión
 
 TalentMatch AI demuestra que es posible construir una plataforma de inteligencia artificial de nivel de producción que sea a la vez **resiliente**, **transparente** y **rigurosa arquitectónicamente**. La adopción de la **Arquitectura Hexagonal (Ports & Adapters)** combinada con un **Monolito Modular** le otorga al proyecto la máxima velocidad de iteración, desacoplamiento estricto de componentes externos y una base sólida para escalar a cualquier proveedor de modelos o base de datos en el futuro.
+
+---
+
+## 11. Puertos y adaptadores en la práctica: evidencia y defensa
+
+> Autora de esta sección y de los cambios que describe: Manuela Echeverri (rama `dev/manuela`, 2026-09-29). Responde al gate "Arquitectura atribuible" de la revisión Makers del 2026-09-23.
+
+### 11.1 Qué estaba mal
+
+Los puertos existían en `core/ports/`, pero el sistema no dependía de ellos:
+
+| Problema | Consecuencia | Cómo se detectó |
+| :--- | :--- | :--- |
+| `GroqLLMAdapter.__init__` hacía `Groq()` | Crear el agente exigía `GROQ_API_KEY`: 6 tests en error y `import api.main` fallaba en CI | Revisión Makers + correr la suite sin key |
+| `agent.py` importaba `db.repository` directo | `VacanteRepositoryPort` y `AuditRepositoryPort` no se usaban: el dominio dependía de SQLite | Lectura de imports; hoy lo vigila un fitness test |
+| `SQLAlchemyRepositoryAdapter.record_audit` pasaba `cv_hash`, `mejor_vacante_id`... | `TypeError` al primer uso | El test anterior solo hacía `issubclass`; el nuevo test de contrato lo llama de verdad |
+| `get_recursos_para_brechas` tipado como `List[str]` | Con una lista devolvía 0 recursos sin avisar | Test de contrato |
+
+### 11.2 Cómo queda la inyección
+
+```mermaid
+flowchart LR
+    subgraph Composicion ["Quién arma el agente"]
+        API["api/main.py<br/>(producción)"]
+        EVAL["evals/ground_truth/run_ground_truth.py"]
+        TEST["tests/*"]
+    end
+    subgraph Dominio ["agent.py — solo conoce puertos"]
+        AG["TalentMatchMultiAgent(llm_provider, vacante_repo, audit_repo)"]
+    end
+    API -->|"GroqLLMAdapter + SQLAlchemyRepositoryAdapter (por defecto)"| AG
+    EVAL -->|"GroqLLMAdapter + JsonRepositoryAdapter(vacantes_reales.json)"| AG
+    TEST -->|"FakeLLMProvider + FakeRepositorio"| AG
+```
+
+| Puerto | Producción | Evals con vacantes reales | Tests |
+| :--- | :--- | :--- | :--- |
+| `LLMProviderPort` | `GroqLLMAdapter` (cliente perezoso) | `GroqLLMAdapter` | `FakeLLMProvider` |
+| `VacanteRepositoryPort` | `SQLAlchemyRepositoryAdapter` | `JsonRepositoryAdapter` | `FakeRepositorio` / `JsonRepositoryAdapter` |
+| `AuditRepositoryPort` | `SQLAlchemyRepositoryAdapter` | `JsonRepositoryAdapter` (en memoria, no ensucia el Trust Center) | `FakeRepositorio` |
+| `DocumentParserPort` | `PyMuPDFParserAdapter` | — | `PyMuPDFParserAdapter` |
+
+### 11.3 Cómo se verifica (no solo se afirma)
+
+- `tests/test_architecture_boundaries.py`: lee los imports con `ast` y falla si `agent.py` o `core/ports/` importan `groq`, `sqlalchemy`, `fitz` o `db.*`. Contra el `agent.py` anterior, falla.
+- `tests/test_repository_contract.py`: compara firmas puerto/adaptador y llama cada método contra la BD sembrada.
+- `tests/test_pipeline_with_fake_llm.py`: el journey completo corre sin red; si el "modelo" devuelve una vacante que no existe (`v999`), no se muestra.
+- CI: `GROQ_API_KEY: ""` en el workflow. Si alguien vuelve a crear el cliente al construir el agente, el CI falla.
+
+### 11.4 Preguntas de defensa (respuestas cortas)
+
+1. **¿Para qué sirve un puerto si solo hay un proveedor?** Para poder probar y evaluar el dominio sin ese proveedor. El caso concreto: los tests corren con `FakeLLMProvider` y el ground truth corre el mismo agente sobre un dataset distinto con `JsonRepositoryAdapter`, sin cambiar una línea de `agent.py`.
+2. **¿Cómo sabemos que el dominio no depende de la infraestructura?** Porque hay un test que lo revisa en cada push, no porque lo diga el diagrama.
+3. **¿Qué riesgo técnico encontramos?** Que "implementa el puerto" (`issubclass`) no significa "cumple el contrato": el adaptador de BD heredaba del puerto y fallaba en el primer uso.
+4. **¿Qué queda pendiente?** `api/main.py` todavía consulta `db.repository` directo para algunos endpoints (listar vacantes, métricas); el siguiente paso es que también use los puertos. Y `agent.py` supera las 300 líneas (gate de mantenibilidad): separar los agentes por archivo.
+
