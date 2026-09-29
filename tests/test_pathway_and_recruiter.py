@@ -1,11 +1,13 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from agent import TalentMatchMultiAgent
+from tests.fakes import FakeLLMProvider
 
 
 class TestPathwayAndRecruiter(unittest.TestCase):
     def setUp(self):
-        self.agent = TalentMatchMultiAgent()
+        self.fake_llm = FakeLLMProvider()
+        self.agent = TalentMatchMultiAgent(llm_provider=self.fake_llm)
 
     @patch.object(TalentMatchMultiAgent, "extraction_agent")
     @patch.object(TalentMatchMultiAgent, "ranking_agent")
@@ -30,10 +32,12 @@ class TestPathwayAndRecruiter(unittest.TestCase):
         self.assertEqual(resultado["incremento_estimado"], "+35%")
         self.assertIn("Docker", resultado["habilidades_aprendidas"])
         self.assertIn("v002", self.agent.vacantes[1]["id"])
+        # extraction y ranking estan parchados: el LLM no debe haberse llamado
+        self.assertEqual(self.fake_llm.llamadas, 0)
 
-    @patch.object(TalentMatchMultiAgent, "_call_groq_json")
-    def test_recruiter_matching_ranking(self, mock_groq):
-        mock_groq.return_value = {
+    def test_recruiter_matching_ranking(self):
+        # La respuesta del "modelo" entra por el puerto LLMProviderPort, no por un patch
+        self.fake_llm = FakeLLMProvider(respuestas=[{
             "ranking": [
                 {
                     "candidato_id": "cand_02",
@@ -52,7 +56,8 @@ class TestPathwayAndRecruiter(unittest.TestCase):
                     "habilidades_coincidentes": ["Python"]
                 }
             ]
-        }
+        }])
+        self.agent = TalentMatchMultiAgent(llm_provider=self.fake_llm)
 
         ranking = self.agent.recruiter_matching(
             descripcion_vacante="Senior Backend Python Developer con Docker",
@@ -67,6 +72,8 @@ class TestPathwayAndRecruiter(unittest.TestCase):
         self.assertEqual(ranking[0]["match_score"], "92%")
         self.assertEqual(ranking[1]["candidato_id"], "cand_01")
         self.assertEqual(ranking[1]["match_score"], "65%")
+        self.assertEqual(self.fake_llm.llamadas, 1)
+        self.assertIn("Senior Backend Python Developer", self.fake_llm.prompts[0])
 
 
 if __name__ == "__main__":
