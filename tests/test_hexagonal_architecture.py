@@ -80,6 +80,55 @@ class TestHexagonalArchitecture(unittest.TestCase):
         self.assertIn("titulo", primera)
         self.assertIn("salario_rango", primera)
 
+    def test_agent_repository_dependency_inversion(self):
+        """
+        Verifica el Principio de Inversión de Dependencias (DIP) para la capa de persistencia:
+        TalentMatchMultiAgent puede recibir cualquier implementación de VacanteRepositoryPort.
+        """
+        from core.ports.repository_port import VacanteRepositoryPort
+        class MockRepo(VacanteRepositoryPort):
+            def get_all_vacantes(self):
+                return [{"id": "mock_01", "titulo": "Mock Vacante", "salario_rango": "COP 10M"}]
+            def get_vacante_by_id(self, vacante_id):
+                return {"id": vacante_id, "titulo": "Mock Vacante"}
+            def get_recursos_para_brechas(self, brechas):
+                return []
+            def create_vacante(self, vacante_data):
+                pass
+            def get_recursos(self, skill=None):
+                return []
+
+        mock_repo = MockRepo()
+        agent = TalentMatchMultiAgent(repository=mock_repo)
+        self.assertIs(agent.repository, mock_repo)
+        self.assertEqual(len(agent.vacantes), 1)
+        self.assertEqual(agent.vacantes[0]["id"], "mock_01")
+
+    def test_service_ports_inbound(self):
+        """Verifica la existencia y contratos de los puertos inbound (Driving Ports)."""
+        from core.ports.service_ports import TalentMatchServicePort, RecruiterServicePort
+        import inspect
+
+        # Verificar que sean clases abstractas con sus métodos esperados
+        self.assertTrue(inspect.isabstract(TalentMatchServicePort))
+        self.assertTrue(inspect.isabstract(RecruiterServicePort))
+        self.assertTrue(hasattr(TalentMatchServicePort, "analyze_cv"))
+        self.assertTrue(hasattr(TalentMatchServicePort, "simulate_gap_closure"))
+        self.assertTrue(hasattr(RecruiterServicePort, "match_candidates"))
+
+    def test_agent_implements_inbound_service_ports(self):
+        """Verifica que TalentMatchMultiAgent implemente formalmente los puertos inbound."""
+        from agent import TalentMatchMultiAgent
+        from core.ports.service_ports import TalentMatchServicePort, RecruiterServicePort
+
+        agent = TalentMatchMultiAgent()
+        self.assertIsInstance(agent, TalentMatchServicePort)
+        self.assertIsInstance(agent, RecruiterServicePort)
+        self.assertTrue(callable(getattr(agent, "analyze_cv", None)))
+        self.assertTrue(callable(getattr(agent, "simulate_gap_closure", None)))
+        self.assertTrue(callable(getattr(agent, "match_candidates", None)))
+
 
 if __name__ == "__main__":
     unittest.main()
+

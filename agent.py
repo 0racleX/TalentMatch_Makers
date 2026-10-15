@@ -12,9 +12,9 @@ from api.models import (
 import re
 from api.retry import with_retry, DailyTokenLimitExceeded
 from api.security import detect_prompt_injection, classify_document_heuristics
-from db.repository import (
-    get_all_vacantes, get_vacante_by_id, get_recursos_para_brechas, record_audit
-)
+from core.ports.repository_port import VacanteRepositoryPort
+from core.ports.service_ports import TalentMatchServicePort, RecruiterServicePort
+from adapters.outbound.db_repository_adapter import SQLAlchemyRepositoryAdapter
 from core.ports.llm_port import LLMProviderPort
 from adapters.outbound.groq_adapter import GroqLLMAdapter, FALLBACK_MODELS
 
@@ -29,17 +29,7 @@ class AgentError(Exception):
     """Falló la llamada a Groq o el parseo de su respuesta."""
 
 
-def cargar_vacantes() -> list:
-    """Carga vacantes desde la base de datos con fallback al archivo JSON."""
-    try:
-        vacantes = get_all_vacantes()
-        if vacantes:
-            return vacantes
-    except Exception as e:
-        logger.warning("No se pudo cargar desde base de datos: %s. Usando JSON.", e)
 
-    with open(VACANTES_PATH, encoding="utf-8") as f:
-        return json.load(f)
 
 
 FALLBACK_MODELS = [
@@ -49,11 +39,12 @@ FALLBACK_MODELS = [
 ]
 
 
-class TalentMatchMultiAgent:
+class TalentMatchMultiAgent(TalentMatchServicePort, RecruiterServicePort):
     def __init__(
         self,
         model: Optional[str] = None,
-        llm_provider: Optional[LLMProviderPort] = None
+        llm_provider: Optional[LLMProviderPort] = None,
+        repository: Optional[VacanteRepositoryPort] = None
     ):
         self.model = model or os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
         if llm_provider is not None:
@@ -62,7 +53,19 @@ class TalentMatchMultiAgent:
         else:
             self.llm_provider = GroqLLMAdapter(model=self.model)
             self.client = getattr(self.llm_provider, "client", None)
-        self.vacantes = cargar_vacantes()
+        self.repository = repository or SQLAlchemyRepositoryAdapter()
+        
+        try:
+            vacantes = self.repository.get_all_vacantes()
+            if vacantes:
+                self.vacantes = vacantes
+            else:
+                with open(VACANTES_PATH, encoding="utf-8") as f:
+                    self.vacantes = json.load(f)
+        except Exception as e:
+            logger.warning("No se pudo cargar desde base de datos: %s. Usando JSON.", e)
+            with open(VACANTES_PATH, encoding="utf-8") as f:
+                self.vacantes = json.load(f)
 
     def _call_groq_json(self, prompt: str, temperature: float = 0.0) -> dict:
         """
@@ -252,7 +255,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
             data = self._call_groq_json(prompt, temperature=0.0)
             # Vincular habilidades recomendadas con recursos de aprendizaje (Camino a la vacante)
             habilidades_rec = data.get("habilidades_recomendadas", [])
-            recursos_raw = get_recursos_para_brechas(" ".join(habilidades_rec))
+            recursos_raw = self.repository.get_recursos_para_brechas([" ".join(habilidades_rec)])
             recursos_modelos = [RecursoAprendizaje(**r) for r in recursos_raw]
 
             return PerfilCandidato(
@@ -293,7 +296,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
             brechas_str = eval_item.get("brechas_identificadas", "")
 
             # Camino a la vacante: Buscar recursos concretos para las brechas
-            recursos_db = get_recursos_para_brechas(brechas_str)
+            recursos_db = self.repository.get_recursos_para_brechas([brechas_str])
             recursos_modelos = [RecursoAprendizaje(**r) for r in recursos_db]
 
             rec = Recomendacion(
@@ -339,11 +342,13 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
                 mensaje_validacion=doc_validation.reason
             )
             try:
-                record_audit(
+                self.repository.record_audit(
+                    cv_hash="N/A",
                     modo="documento_invalido",
-                    num_recs=0,
-                    top_score=0,
-                    is_suspicious=check_seguridad.is_suspicious
+                    mejor_vacante_id=None,
+                    mejor_score=0,
+                    inyeccion_detectada=check_seguridad.is_suspicious,
+                    total_evaluadas=0
                 )
             except Exception:
                 pass
@@ -370,11 +375,13 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
                 mensaje_validacion=motivo
             )
             try:
-                record_audit(
+                self.repository.record_audit(
+                    cv_hash="N/A",
                     modo="documento_invalido",
-                    num_recs=0,
-                    top_score=0,
-                    is_suspicious=check_seguridad.is_suspicious
+                    mejor_vacante_id=None,
+                    mejor_score=0,
+                    inyeccion_detectada=check_seguridad.is_suspicious,
+                    total_evaluadas=0
                 )
             except Exception:
                 pass
@@ -424,11 +431,13 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
 
         # Registrar auditoría para el Trust Center
         try:
-            record_audit(
+            self.repository.record_audit(
+                cv_hash="N/A",
                 modo=output.modo,
-                num_recs=len(output.recomendaciones),
-                top_score=max_score,
-                is_suspicious=check_seguridad.is_suspicious
+                mejor_vacante_id=None,
+                mejor_score=max_score,
+                inyeccion_detectada=check_seguridad.is_suspicious,
+                total_evaluadas=len(output.recomendaciones)
             )
         except Exception:
             pass
@@ -447,7 +456,7 @@ Devuelve SOLO el JSON. Sé honesto pero constructivo.
         Responde a la pregunta que ni LinkedIn ni Magneto pueden responder:
         'Si aprendo X y Y, ¿cuánto sube mi match y por qué?'
         """
-        vacante = get_vacante_by_id(vacante_id)
+        vacante = self.repository.get_vacante_by_id(vacante_id)
         if not vacante:
             raise AgentError(f"Vacante con ID '{vacante_id}' no encontrada.")
 
@@ -547,3 +556,17 @@ REGLA: Ordena de mayor a menor score. No inventes habilidades.
         except Exception as e:
             logger.error("recruiter_matching falló tras reintentos: %s", e, exc_info=True)
             raise AgentError(f"recruiter_matching falló: {e}") from e
+
+    # ─── Implementación de Inbound Driving Ports (Arquitectura Hexagonal) ──
+    def analyze_cv(self, cv_text: str) -> Dict[str, Any]:
+        """Implementación formal del puerto inbound TalentMatchServicePort."""
+        output = self.run(cv_text)
+        return output.model_dump()
+
+    def match_candidates(
+        self,
+        vacante_text: str,
+        candidates: List[Dict[str, str]]
+    ) -> List[Dict[str, Any]]:
+        """Implementación formal del puerto inbound RecruiterServicePort."""
+        return self.recruiter_matching(vacante_text, candidates)

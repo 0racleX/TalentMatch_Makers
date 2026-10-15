@@ -35,8 +35,8 @@ flowchart TD
     end
 
     subgraph DrivingPorts ["Puertos de Entrada (Inbound Use Cases)"]
-        P_Match["TalentMatchServicePort<br/>(Análisis CV & Camino a Vacante)"]
-        P_Recruiter["RecruiterServicePort<br/>(Screening Inverso de Candidatos)"]
+        P_Match["TalentMatchServicePort<br/>(core/ports/service_ports.py)"]
+        P_Recruiter["RecruiterServicePort<br/>(core/ports/service_ports.py)"]
     end
 
     subgraph DomainCore ["NÚCLEO DE DOMINIO (Hexagonal Core)"]
@@ -292,20 +292,21 @@ El archivo [`evals/eval_cases.json`](file:///C:/Users/pc/Desktop/makers/TalentMa
 Toda la suite determinista de pruebas se ejecuta de forma continua sin costo de API:
 
 ```bash
-python -m unittest discover tests -v
+python -m pytest tests/ -v --tb=short
 ```
 
 **Resultado de Ejecución:**
-- **Total de pruebas:** 30 pruebas unitarias deterministas.
-- **Tiempo de ejecución:** ~2.0 segundos.
-- **Estado:** `OK (30/30 pasando al 100%)`.
-- **Cobertura:**
-  - `test_hexagonal_architecture.py`: 4 pruebas (contratos de puertos, DIP con mocks, detección de PDFs escaneados, adaptadores de repositorio).
-  - `test_document_validation.py`: 8 pruebas (clasificador heurístico, rechazo de guías de laboratorio, folletos, facturas).
-  - `test_security.py`: 12 pruebas (detección de prompt injection, rate limiting, validación de longitud).
-  - `test_formatter.py`: 2 pruebas (formateo de camino a la vacante y recomendaciones).
-  - `test_pathway_and_recruiter.py`: 3 pruebas (simulador interactivo de cierre de brechas y modo recruiter).
-  - `test_models.py`: 1 prueba (validación de modelos Pydantic).
+- **Total de pruebas:** 33 pruebas unitarias deterministas.
+- **Tiempo de ejecución:** ~2.5 segundos.
+- **Estado:** `OK (33/33 pasando al 100%)`.
+- **Cobertura por archivo de prueba:**
+  - `test_hexagonal_architecture.py` (7 pruebas): Contratos de puertos, DIP con mocks de LLMProviderPort, DIP con mocks de VacanteRepositoryPort, adaptadores secundarios, puertos inbound Driving (`TalentMatchServicePort`, `RecruiterServicePort`) e implementación formal en `TalentMatchMultiAgent`.
+  - `test_document_validation.py` (8 pruebas): Clasificador heurístico y reglas de seguridad para rechazar guías de laboratorio, talleres académicos, tareas de Kubernetes, manuales técnicos, facturas y folletos publicitarios.
+  - `test_eval_runner_logic.py` (4 pruebas): Lógica de evaluación del runner, detección de títulos de trabajo inventados, links inventados, activación de perfilamiento y happy path.
+  - `test_security.py` (4 pruebas): Detección de patrones de prompt injection (jailbreak / override), admisión de CVs benignos, límites de longitud y rate limiting en memoria con ventana deslizante.
+  - `test_formatter.py` (3 pruebas): Vinculación de recursos de camino a la vacante, ordenamiento por score descendente (Top 3) y preservación de enlaces legítimos de la base de datos (0% alucinación).
+  - `test_models.py` (5 pruebas): Validación de esquemas Pydantic v2 (Recomendacion, PerfilCandidato, Recruiter, SimulacionBrechas).
+  - `test_pathway_and_recruiter.py` (2 pruebas): Simulación interactiva de cierre de brechas técnicas y ranking objetivo del modo recruiter sin sesgos de identidad.
 
 ---
 

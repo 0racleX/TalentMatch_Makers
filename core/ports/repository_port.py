@@ -27,6 +27,16 @@ class VacanteRepositoryPort(ABC):
         """Busca recursos de aprendizaje verificados asociados a una lista de brechas técnicas."""
         pass
 
+    @abstractmethod
+    def create_vacante(self, vacante_data: Dict[str, Any]) -> None:
+        """Crea una nueva vacante."""
+        pass
+
+    @abstractmethod
+    def get_recursos(self, skill: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Retorna recursos de aprendizaje."""
+        pass
+
 
 class AuditRepositoryPort(ABC):
     """

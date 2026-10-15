@@ -134,6 +134,12 @@ function switchTab(tab) {
 dropZone.addEventListener('click', (e) => {
   if (!e.target.closest('.file-remove')) fileInput.click();
 });
+dropZone.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    if (!e.target.closest('.file-remove')) fileInput.click();
+  }
+});
 dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', (e) => {
@@ -181,14 +187,22 @@ analyzeBtn.addEventListener('click', handleAnalyze);
 async function handleAnalyze() {
   setBtnLoading(true);
   pipelineVisual.hidden = false;
+  const agentsBadge = document.getElementById('agents-badge');
+  const profilingStep = document.getElementById('step-profiling');
+  if (agentsBadge) agentsBadge.hidden = false;
   resetPipeline();
+  showThoughtStream();
+  clearThoughts();
   uploadSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
+  // Step 1: Show extraction as active while fetch runs
+  setStepState('step-extraction', 'active');
+  addThought('🛡️ Gatekeeper', 'Verificando integridad del documento...');
+
+  const fetchStart = Date.now();
+
   try {
-    await animateStep('step-extraction', 600);
-    await animateStep('step-search', 700);
-    await animateStep('step-ranking', 700);
-    await animateStep('step-format', 500);
+    addThought('🔍 Extracción', 'Analizando habilidades técnicas, experiencia y stack...');
 
     let data;
     if (currentTab === 'pdf' && currentFile) {
@@ -213,10 +227,50 @@ async function handleAnalyze() {
       }
     }
 
-    renderResults(data.data);
-    loadTrustMetrics(); // Actualizar métricas tras análisis
+    const elapsed = Date.now() - fetchStart;
+    const output = data.data;
+    const recs = output.recomendaciones || [];
+    const topRec = recs[0];
+
+    // Animate steps sequentially after successful response
+    setStepState('step-extraction', 'done');
+    addThought('🔍 Extracción', `Perfil extraído: nivel ${output.perfil_candidato?.nivel || 'detectado'}`, 'success');
+    await sleep(200);
+
+    setStepState('step-search', 'done');
+    addThought('🎯 Búsqueda', `Comparando contra ${output.total_vacantes_evaluadas || 25} vacantes curadas...`, 'success');
+    await sleep(200);
+
+    setStepState('step-ranking', 'done');
+    if (topRec) {
+      addThought('📊 Ranking', `Top match: ${topRec.titulo_oportunidad || topRec.titulo} (${topRec.score}%)`, 'success');
+    } else {
+      addThought('📊 Ranking', 'Evaluación de compatibilidad completada', 'success');
+    }
+    await sleep(200);
+
+    setStepState('step-format', 'done');
+    addThought('🗂️ Formatter', `Generando resultados con recursos formativos...`, 'success');
+    await sleep(150);
+
+    // Step 5: Profiling (conditional)
+    if (output.modo === 'profiling') {
+      if (profilingStep) profilingStep.style.display = '';
+      setStepState('step-profiling', 'done');
+      addThought('🎓 Perfilamiento', `Score < 40% → Diagnóstico de carrera activado`, 'warning');
+      await sleep(150);
+    }
+
+    addThought('✅ Pipeline', `Análisis completado en ${elapsed}ms — ${recs.length} match${recs.length !== 1 ? 'es' : ''} encontrado${recs.length !== 1 ? 's' : ''}`, 'success');
+
+    if (agentsBadge) agentsBadge.hidden = true;
+    renderResults(output);
+    loadTrustMetrics();
 
   } catch (err) {
+    setStepState('step-extraction', 'idle');
+    addThought('❌ Error', err.message || 'Error de conexión', 'warning');
+    if (agentsBadge) agentsBadge.hidden = true;
     showToast(err.message || 'Error conectando con la API en localhost:8000', 'error');
   } finally {
     setBtnLoading(false);
@@ -230,23 +284,73 @@ function setBtnLoading(on) {
 }
 
 function resetPipeline() {
-  ['step-extraction','step-search','step-ranking','step-format'].forEach(id => {
+  ['step-extraction','step-search','step-ranking','step-format','step-profiling'].forEach(id => {
     const el = document.getElementById(id);
+    if (!el) return;
     el.className = 'pipeline-step';
-    el.querySelector('.step-status').className = 'step-status idle';
+    const status = el.querySelector('.step-status');
+    if (status) status.className = 'step-status idle';
   });
+  const profilingStep = document.getElementById('step-profiling');
+  if (profilingStep) profilingStep.style.display = 'none';
+}
+
+function setStepState(id, state) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const status = el.querySelector('.step-status');
+  el.className = `pipeline-step ${state}`;
+  if (status) status.className = `step-status ${state}`;
 }
 
 async function animateStep(id, duration) {
-  const el = document.getElementById(id);
-  const status = el.querySelector('.step-status');
-  el.classList.add('active');
-  status.className = 'step-status running';
+  setStepState(id, 'active');
   await sleep(duration);
-  el.classList.remove('active'); el.classList.add('done');
-  status.className = 'step-status done';
+  setStepState(id, 'done');
 }
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+// ── Thought Stream Console ──────────────────────────────────────────────────
+function initThoughtStream() {
+  const toggle = document.getElementById('thought-toggle');
+  const stream = document.getElementById('thought-stream');
+  if (toggle && stream) {
+    toggle.addEventListener('click', () => {
+      const isExpanded = stream.classList.toggle('expanded');
+      toggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    });
+  }
+}
+
+function showThoughtStream() {
+  const el = document.getElementById('thought-stream');
+  const toggle = document.getElementById('thought-toggle');
+  if (el) { el.hidden = false; el.classList.add('expanded'); }
+  if (toggle) { toggle.setAttribute('aria-expanded', 'true'); }
+}
+
+function hideThoughtStream() {
+  const el = document.getElementById('thought-stream');
+  const toggle = document.getElementById('thought-toggle');
+  if (el) { el.hidden = true; el.classList.remove('expanded'); }
+  if (toggle) { toggle.setAttribute('aria-expanded', 'false'); }
+  clearThoughts();
+}
+
+function addThought(agent, message, type = '') {
+  const consoleEl = document.getElementById('thought-console');
+  if (!consoleEl) return;
+  const line = document.createElement('div');
+  line.className = `thought-line ${type}`;
+  line.innerHTML = `<span class="thought-agent">${escHtml(agent)}</span><span class="thought-msg">${escHtml(message)}</span>`;
+  consoleEl.appendChild(line);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+function clearThoughts() {
+  const consoleEl = document.getElementById('thought-console');
+  if (consoleEl) consoleEl.innerHTML = '';
+}
 
 // ── Render Results con Camino a la Vacante ────────────────────────────────────
 function renderResults(output) {
@@ -453,7 +557,9 @@ async function triggerSimulation(rec, skill, card, index) {
         <div class="card-gaps-list">${simData.brechas_restantes.map(b => `<span class="gap-tag">${escHtml(b)}</span>`).join('')}</div>
       ` : '<div style="color:var(--emerald-light);font-size:0.85rem">¡Cubre el 100% de los requisitos técnicos clave!</div>'}
     `;
+    lastFocusedElement = document.activeElement;
     modalOverlay.hidden = false;
+    modalClose.focus();
 
   } catch (err) {
     showToast(`Error en la simulación: ${err.message}`, 'error');
@@ -727,7 +833,7 @@ loadTrustMetrics();
 
 runFairnessBtn.addEventListener('click', async () => {
   runFairnessBtn.disabled = true;
-  runFairnessBtn.innerHTML = '<span class="spinner"></span> Verificando equidad matemática...';
+  runFairnessBtn.innerHTML = '<span class="spinner"></span> Verificando equidad...';
   fairnessStatusPill.style.display = 'none';
 
   try {
@@ -849,9 +955,12 @@ function renderEvals(data) {
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
+let lastFocusedElement = null;
+
 function openModal(casoId) {
   const caso = lastEvalDetails[casoId];
   if (!caso) return;
+  lastFocusedElement = document.activeElement;
   modalTitle.textContent = `Criterios: ${casoId}`;
   modalBody.innerHTML = (caso.criterios || []).map(c => `
     <div class="criterio-row">
@@ -863,10 +972,19 @@ function openModal(casoId) {
     </div>
   `).join('') || '<p style="color:var(--text-muted)">Sin criterios registrados</p>';
   modalOverlay.hidden = false;
+  modalClose.focus();
 }
-modalClose.addEventListener('click', () => { modalOverlay.hidden = true; });
-modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) modalOverlay.hidden = true; });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modalOverlay.hidden = true; });
+
+function closeModal() {
+  modalOverlay.hidden = true;
+  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+  }
+}
+
+modalClose.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modalOverlay.hidden) closeModal(); });
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(msg, type = 'info') {
@@ -1042,7 +1160,31 @@ window.talentMatchRouter = {
   getActiveView: () => activeViewName
 };
 
+// ── Hamburger Menu ────────────────────────────────────────────────────────────
+function initHamburger() {
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const navLinks = document.querySelector('.nav-links');
+  if (hamburgerBtn && navLinks) {
+    hamburgerBtn.addEventListener('click', () => {
+      hamburgerBtn.classList.toggle('active');
+      navLinks.classList.toggle('mobile-open');
+      const expanded = hamburgerBtn.classList.contains('active');
+      hamburgerBtn.setAttribute('aria-expanded', expanded);
+    });
+    // Close menu when clicking any nav link
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        hamburgerBtn.classList.remove('active');
+        navLinks.classList.remove('mobile-open');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 initRouter();
+initHamburger();
+initThoughtStream();
 loadVacantes();
 checkCanAnalyze();

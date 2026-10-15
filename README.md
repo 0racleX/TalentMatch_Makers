@@ -2,7 +2,7 @@
 
 Sistema multiagente de matching semántico CV ↔ vacantes tecnológicas, con explicaciones ancladas en evidencia, simulador interactivo de camino a la vacante, modo recruiter sin sesgos y transparencia salarial radical. Proyecto de Dylan Mejía y Manuela Echeverrí.
 
-> Arquitectura declarada: [`docs/ArquitecturaTalentMatch.png`](docs/ArquitecturaTalentMatch.png) · Detalle real de arquitectura: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · Contratos de Endpoints: [`docs/API.md`](docs/API.md) · Roadmap completado: [`docs/ROADMAP.md`](docs/ROADMAP.md)
+> **Guía Completa:** [`docs/RESUMEN_PROYECTO.md`](docs/RESUMEN_PROYECTO.md) · **Pitch Demo Day 1:** [`docs/PITCH_DEMO_DAY.md`](docs/PITCH_DEMO_DAY.md) · **Arquitectura:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · **Contratos API:** [`docs/API.md`](docs/API.md) · **Roadmap:** [`docs/ROADMAP.md`](docs/ROADMAP.md)
 
 ---
 
@@ -44,21 +44,33 @@ Sistema multiagente de matching semántico CV ↔ vacantes tecnológicas, con ex
 
 ---
 
-## Estructura del Proyecto
+## Estructura del Proyecto (Arquitectura Hexagonal)
 
 ```
 TalentMatch_Makers/
-├── agent.py                 # Pipeline multiagente con reintentos y simulador
-├── Dockerfile               # Contenedor de producción seguro
+├── agent.py                 # Pipeline multiagente (implementa TalentMatchServicePort & RecruiterServicePort)
+├── Dockerfile               # Contenedor de producción seguro multi-stage
 ├── docker-compose.yml       # Orquestación de backend FastAPI y frontend Nginx
 ├── nginx.conf               # Configuración de reverse proxy
 ├── requirements.txt         # Dependencias Python
 ├── TEAM_ROTATION.md         # Rotación de roles y responsabilidades
 ├── CONCLUSIONES.md          # Análisis histórico del baseline inicial
 ├── MAKERS_REVIEW.md         # Review histórico de Makers
+├── core/
+│   └── ports/               # Puertos Inbound & Outbound de Arquitectura Hexagonal
+│       ├── __init__.py
+│       ├── llm_port.py      # Puerto abstracto de inferencia LLM
+│       ├── document_parser_port.py # Puerto de extracción y validación de documentos
+│       ├── repository_port.py # Puerto de acceso a datos de vacantes y auditoría
+│       └── service_ports.py # Puertos de casos de uso (TalentMatch & Recruiter)
+├── adapters/
+│   └── outbound/            # Adaptadores de infraestructura (Puertos Secundarios)
+│       ├── groq_adapter.py  # Adaptador Groq con backoff exponencial, jitter y fallback
+│       ├── pdf_parser_adapter.py # Adaptador PyMuPDF y detección de escaneos
+│       └── db_repository_adapter.py # Adaptador SQLAlchemy desacoplado de ORM
 ├── api/
-│   ├── main.py              # API FastAPI con rate limiting, auth y endpoints B2B
-│   ├── models.py            # Modelos Pydantic (Camino, Recruiter, Trust)
+│   ├── main.py              # API FastAPI (Adaptador Primario / Driving)
+│   ├── models.py            # Modelos Pydantic v2 (Camino, Recruiter, Trust)
 │   ├── eval_runner.py       # Motor de evals y auditoría de equidad
 │   ├── security.py          # Prompt injection, validación y rate limiter
 │   ├── retry.py             # Backoff exponencial con jitter para Groq
@@ -70,15 +82,17 @@ TalentMatch_Makers/
 │   ├── seed.py              # Siembra automática de vacantes y catálogo formativo
 │   └── repository.py        # Capa de acceso a datos y métricas de confianza
 ├── tests/
-│   ├── test_models.py       # Tests unitarios deterministas de Pydantic
-│   ├── test_formatter.py    # Tests deterministas de formateo y caminos
-│   ├── test_security.py     # Tests de prompt injection y rate limiting
-│   ├── test_eval_runner_logic.py # Tests de reglas de evaluación
-│   └── test_pathway_and_recruiter.py # Tests de simulador y modo recruiter
+│   ├── test_hexagonal_architecture.py # 7 tests de puertos, adaptadores y DIP
+│   ├── test_document_validation.py    # 8 tests de detección anti-prácticas y tareas
+│   ├── test_security.py               # 4 tests de prompt injection y rate limiting
+│   ├── test_formatter.py              # 3 tests deterministas de caminos y links
+│   ├── test_eval_runner_logic.py      # 4 tests de reglas de evaluación y gates
+│   ├── test_models.py                 # 5 tests de esquemas y validaciones Pydantic
+│   └── test_pathway_and_recruiter.py  # 2 tests de simulador y modo recruiter
 ├── data/
 │   ├── vacantes.json        # 25 vacantes curadas con salarios públicos
 │   └── talentmatch.db       # Base de datos SQLite persistente
-├── frontend/                # SPA (Upload CV, Resultados, Recruiter, Trust Center, Evals)
+├── frontend/                # SPA Glassmorphism (Upload CV, Resultados, Recruiter, Trust Center, Evals)
 ├── evals/
 │   ├── eval_cases.json      # 12 casos de prueba (happy path, adversariales, reales)
 │   └── results.md           # Bitácora de resultados y corridas
@@ -86,8 +100,9 @@ TalentMatch_Makers/
 │   ├── README.md            # Documentación del prototipo histórico
 │   └── TalentMatch_Use_Case_Groq (1).ipynb # Notebook original archivado
 └── docs/
+    ├── PITCH_DEMO_DAY.md    # Guía minuto a minuto para el Pitch de 6 minutos de Demo Day 1
     ├── ROADMAP.md           # Roadmap técnico y estratégico ejecutado
-    ├── ARCHITECTURE.md      # Arquitectura declarada vs implementada
+    ├── ARCHITECTURE.md      # Arquitectura hexagonal declarada e implementada
     ├── API.md               # Especificación y contratos de la API
     └── ArquitecturaTalentMatch.png
 ```
@@ -104,14 +119,13 @@ TalentMatch_Makers/
    cp .env.example .env    # Verifica que GROQ_API_KEY esté presente
    ```
 
-2. **Iniciar Backend**:
+2. **Iniciar Backend & Frontend**:
    ```bash
    uvicorn api.main:app --reload
    ```
-   La API estará en `http://localhost:8000`. Verifica en `http://localhost:8000/health`.
+   La API estará en `http://localhost:8000` y sirve directamente el frontend en `http://localhost:8000/`. Verifica la salud en `http://localhost:8000/health`.
 
-3. **Abrir Frontend**:
-   Abre `frontend/index.html` en tu navegador o levanta un servidor estático:
+3. **(Opcional) Servir Frontend en puerto independiente**:
    ```bash
    python -m http.server 3000 --directory frontend
    ```
@@ -128,15 +142,15 @@ docker compose up --build
 
 ## Tests Unitarios Deterministas (0 costo de API)
 
-Ejecuta la suite completa de 18 pruebas unitarias deterministas en 1 segundo:
+Ejecuta la suite completa de **33 pruebas unitarias deterministas** en ~2.5 segundos:
 
 ```bash
-python -m unittest discover tests -v
+python -m pytest tests/ -v --tb=short
 ```
 
 ---
 
-## Suite de Evals
+## Suite de Evals (12/12 Pasando - 100%)
 
 Ejecuta los 12 casos de evaluación contra el agente (con soporte de cache determinista para baselines consistentes):
 

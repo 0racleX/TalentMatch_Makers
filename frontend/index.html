@@ -38,11 +38,24 @@
       </div>
       <span class="logo-text">TalentMatch <span class="logo-ai">AI</span></span>
     </div>
+    <button class="hamburger" id="hamburger-btn" aria-label="Abrir menú" aria-expanded="false">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
     <div class="nav-links">
-      <a href="#candidato" class="nav-link active" id="nav-candidato">👤 Candidato</a>
-      <a href="#reclutador" class="nav-link" id="nav-recruiter">💼 Modo Reclutador</a>
-      <a href="#vacantes" class="nav-link" id="nav-vacantes">📋 Vacantes</a>
-      <a href="#trust" class="nav-link" id="nav-trust">🛡️ Trust Center &amp; Evals</a>
+      <a href="#candidato" class="nav-link active" id="nav-candidato">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:6px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Candidato
+      </a>
+      <a href="#reclutador" class="nav-link" id="nav-recruiter">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:6px;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Modo Reclutador
+      </a>
+      <a href="#vacantes" class="nav-link" id="nav-vacantes">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:6px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Vacantes
+      </a>
+      <a href="#trust" class="nav-link" id="nav-trust">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:6px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Trust Center &amp; Evals
+      </a>
     </div>
     <div class="nav-badge">
       <span class="badge-dot"></span>
@@ -70,11 +83,19 @@
   <div class="hero-content">
     <div class="role-switcher-banner">
       <span class="role-switcher-label">Espacio activo:</span>
-      <div class="role-toggle-group">
-        <button class="role-toggle-btn active" data-target="candidato">👤 Candidato</button>
-        <button class="role-toggle-btn" data-target="reclutador">💼 Reclutador</button>
-        <button class="role-toggle-btn" data-target="vacantes">📋 Vacantes</button>
-        <button class="role-toggle-btn" data-target="trust">🛡️ Trust Center</button>
+      <div class="role-toggle-group" role="group" aria-label="Selector de espacio de trabajo">
+        <button type="button" class="role-toggle-btn active" data-target="candidato" aria-label="Ver portal de Candidato">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Candidato
+        </button>
+        <button type="button" class="role-toggle-btn" data-target="reclutador" aria-label="Ver portal de Reclutador">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Reclutador
+        </button>
+        <button type="button" class="role-toggle-btn" data-target="vacantes" aria-label="Ver base de datos de Vacantes">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Vacantes
+        </button>
+        <button type="button" class="role-toggle-btn" data-target="trust" aria-label="Ver Trust Center y Auditoría Pública">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Trust Center
+        </button>
       </div>
     </div>
     <div class="hero-tag">
@@ -148,7 +169,7 @@
 
     <!-- PDF Panel -->
     <div class="tab-panel active" id="panel-pdf" role="tabpanel">
-      <div class="drop-zone" id="drop-zone">
+      <div class="drop-zone" id="drop-zone" tabindex="0" role="button" aria-label="Arrastra tu CV aquí o haz clic para seleccionar">
         <div class="drop-zone-content">
           <div class="drop-icon">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -205,7 +226,10 @@
     </div>
 
     <!-- Agent Pipeline Visual -->
-    <div class="pipeline-visual" id="pipeline-visual" hidden>
+    <div id="agents-badge" class="agents-badge" hidden>
+      ⚡ <span id="agents-count">5</span> Agentes IA Analizando Tu CV
+    </div>
+    <div class="pipeline-visual" id="pipeline-visual" aria-live="polite" hidden>
       <div class="pipeline-title">Pipeline de 5 agentes con resiliencia y reintentos</div>
       <div class="pipeline-steps">
         <div class="pipeline-step" id="step-extraction">
@@ -231,6 +255,22 @@
           <div class="step-name">Camino a Vacante</div>
           <div class="step-status idle"></div>
         </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step" id="step-profiling" style="display: none;">
+          <div class="step-icon">🎓</div>
+          <div class="step-name">Perfilamiento</div>
+          <div class="step-status idle"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="thought-stream" class="thought-stream" hidden>
+      <button type="button" class="thought-toggle" id="thought-toggle" aria-expanded="false" aria-controls="thought-console">
+        <span>🧠 Razonamiento de los Agentes</span>
+        <span class="thought-arrow">▼</span>
+      </button>
+      <div class="thought-console" id="thought-console" role="region" aria-label="Consola de razonamiento de agentes">
+        <!-- Logs dinámicos -->
       </div>
     </div>
   </div>
@@ -377,7 +417,7 @@
         <div class="trust-icon">⚖️</div>
         <div class="trust-title">Auditoría de Sesgo y Equidad</div>
         <div class="trust-desc">Validamos matemáticamente que perfiles con igualdad de habilidades obtengan scores equivalentes, sin sesgo por género ni país de origen.</div>
-        <button class="btn btn-ghost btn-sm" id="run-fairness-btn" style="margin-top:10px;">Correr Auditoría de Sesgo en Vivo</button>
+        <button class="btn btn-ghost btn-sm" id="run-fairness-btn">Correr Auditoría de Sesgo en Vivo</button>
         <div id="fairness-status-pill" class="trust-badge-pill" style="display:none;margin-top:8px;"></div>
       </div>
 

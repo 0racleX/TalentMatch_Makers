@@ -22,19 +22,16 @@ from api.security import (
     api_rate_limiter, eval_rate_limiter
 )
 from agent import TalentMatchMultiAgent, AgentError
+from core.ports import TalentMatchServicePort, RecruiterServicePort
 from adapters.outbound.pdf_parser_adapter import PyMuPDFParserAdapter
-from db.repository import (
-    get_all_vacantes, get_vacante_by_id, get_recursos_para_brechas,
-    get_audit_metrics
-)
-from db.database import SessionLocal
-from db.models import VacanteModel, RecursoAprendizajeModel
+from adapters.outbound.db_repository_adapter import SQLAlchemyRepositoryAdapter
 
 # Inicializar logger estructurado
 logger = setup_logging()
 
-# Adaptador secundario para parseo de documentos
+# Adaptadores secundarios (Ports & Adapters)
 pdf_parser = PyMuPDFParserAdapter()
+repo_adapter = SQLAlchemyRepositoryAdapter()
 
 # ── App ─────────────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -55,8 +52,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Instancia del agente (singleton) ────────────────────────────────────────
-agente = TalentMatchMultiAgent()
+# ── Instancia del agente (singleton con inversión de dependencias) ─────────
+# Implementa formalmente los puertos inbound TalentMatchServicePort y RecruiterServicePort
+agente: TalentMatchMultiAgent = TalentMatchMultiAgent(repository=repo_adapter)
+talent_match_service: TalentMatchServicePort = agente
+recruiter_service: RecruiterServicePort = agente
 
 
 # ── Endpoints Base & Salud ──────────────────────────────────────────────────
@@ -78,14 +78,14 @@ def listar_vacantes():
     Retorna la BD interna de vacantes para transparencia radical.
     Todas las vacantes contienen salario público y requisitos explícitos.
     """
-    vacantes = get_all_vacantes()
+    vacantes = repo_adapter.get_all_vacantes()
     return {"total": len(vacantes), "vacantes": vacantes}
 
 
 @app.get("/vacantes/{vacante_id}")
 def obtener_vacante(vacante_id: str):
     """Retorna los detalles de una vacante específica por ID."""
-    vacante = get_vacante_by_id(vacante_id)
+    vacante = repo_adapter.get_vacante_by_id(vacante_id)
     if not vacante:
         raise HTTPException(status_code=404, detail="Vacante no encontrada")
     return vacante
@@ -102,33 +102,13 @@ def crear_vacante(vacante_data: dict):
         if field not in vacante_data:
             raise HTTPException(status_code=400, detail=f"Campo obligatorio faltante: '{field}'")
 
-    session = SessionLocal()
     try:
-        nueva = VacanteModel(
-            id=vacante_data["id"],
-            titulo=vacante_data["titulo"],
-            empresa=vacante_data["empresa"],
-            tipo_empresa=vacante_data["tipo_empresa"],
-            nivel=vacante_data["nivel"],
-            area=vacante_data["area"],
-            tipo=vacante_data["tipo"],
-            remoto=vacante_data.get("remoto", True),
-            ubicacion=vacante_data.get("ubicacion", "Remoto"),
-            descripcion=vacante_data["descripcion"],
-            link=vacante_data.get("link"),
-            salario_rango=vacante_data.get("salario_rango", "COP 4M - 7M"),
-            requisitos_json=json.dumps(vacante_data["requisitos"], ensure_ascii=False)
-        )
-        session.merge(nueva)
-        session.commit()
+        repo_adapter.create_vacante(vacante_data)
         # Recargar vacantes en el agente
-        agente.vacantes = get_all_vacantes()
+        agente.vacantes = repo_adapter.get_all_vacantes()
         return {"status": "success", "mensaje": f"Vacante {vacante_data['id']} guardada exitosamente."}
     except Exception as e:
-        session.rollback()
         raise HTTPException(status_code=500, detail=f"Error al guardar vacante: {e}")
-    finally:
-        session.close()
 
 
 # ── Endpoint Matching de Candidato ──────────────────────────────────────────
@@ -293,7 +273,7 @@ def metricas_confianza():
     Dashboard de Confianza Público (Roadmap Parte B - Apuesta #3).
     Expone estadísticas en tiempo real: tasa de alucinación cero y transparencia.
     """
-    metricas = get_audit_metrics()
+    metricas = repo_adapter.get_audit_metrics()
     return TrustMetricsResponse(
         total_evaluaciones=metricas["total_evaluaciones"],
         tasa_match_directo_pct=metricas["tasa_match_directo_pct"],
@@ -322,15 +302,8 @@ def auditoria_de_sesgo(use_cache: bool = Query(True)):
 @app.get("/recursos", response_model=List[RecursoAprendizaje])
 def listar_recursos(skill: Optional[str] = Query(None)):
     """Retorna el catálogo curado de recursos de formación y becas vinculados a brechas."""
-    session = SessionLocal()
-    try:
-        query = session.query(RecursoAprendizajeModel)
-        if skill:
-            query = query.filter(RecursoAprendizajeModel.habilidad.ilike(f"%{skill}%"))
-        recursos = query.all()
-        return [RecursoAprendizaje(**r.to_dict()) for r in recursos]
-    finally:
-        session.close()
+    recursos = repo_adapter.get_recursos(skill=skill)
+    return [RecursoAprendizaje(**r) for r in recursos]
 
 
 @app.post(
