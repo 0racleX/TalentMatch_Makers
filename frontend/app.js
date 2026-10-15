@@ -1165,7 +1165,8 @@ function initHamburger() {
   const hamburgerBtn = document.getElementById('hamburger-btn');
   const navLinks = document.querySelector('.nav-links');
   if (hamburgerBtn && navLinks) {
-    hamburgerBtn.addEventListener('click', () => {
+    hamburgerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       hamburgerBtn.classList.toggle('active');
       navLinks.classList.toggle('mobile-open');
       const expanded = hamburgerBtn.classList.contains('active');
@@ -1178,6 +1179,14 @@ function initHamburger() {
         navLinks.classList.remove('mobile-open');
         hamburgerBtn.setAttribute('aria-expanded', 'false');
       });
+    });
+    // Close menu when tapping outside
+    document.addEventListener('click', (e) => {
+      if (navLinks.classList.contains('mobile-open') && !navLinks.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+        hamburgerBtn.classList.remove('active');
+        navLinks.classList.remove('mobile-open');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+      }
     });
   }
 }

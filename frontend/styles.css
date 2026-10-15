@@ -74,7 +74,7 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--violet); border-radius: 99px; }
 
 /* ─── Utilities ────────────────────────────────────────────────────────────── */
-.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 24px; box-sizing: border-box; }
 .gradient-text {
   background: linear-gradient(135deg, var(--violet-light), var(--emerald-light));
   -webkit-background-clip: text;
@@ -521,7 +521,7 @@ body {
   background: var(--emerald-dim); border: 1px solid rgba(16,185,129,0.2);
   color: var(--emerald-light); font-size: 0.82rem; font-weight: 500; margin-bottom: 16px;
 }
-.cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 32px; }
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 24px; margin-bottom: 32px; }
 
 /* Match Card */
 .match-card {
@@ -689,7 +689,7 @@ body {
 }
 .filter-btn.active { background: var(--violet); border-color: var(--violet); color: #fff; }
 .filter-btn:hover:not(.active) { border-color: var(--border-hover); color: var(--text-primary); }
-.vacantes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.vacantes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 20px; }
 .vacante-card {
   padding: 22px; border-radius: var(--radius-lg);
   background: var(--bg-card); border: 1px solid var(--border);
@@ -836,15 +836,25 @@ body {
 .hamburger {
   display: none;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
   gap: 5px;
-  background: none;
-  border: none;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 42px;
+  height: 42px;
+  padding: 8px;
   cursor: pointer;
-  padding: 0.5rem;
   z-index: 1001;
+  transition: all var(--transition);
+}
+.hamburger:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--violet);
 }
 .hamburger-line {
-  width: 24px;
+  width: 22px;
   height: 2px;
   background: var(--text-primary);
   border-radius: 2px;
@@ -854,35 +864,8 @@ body {
 .hamburger.active .hamburger-line:nth-child(2) { opacity: 0; }
 .hamburger.active .hamburger-line:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 
-/* ─── Responsive ────────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .hamburger { display: flex; }
-  .nav-links {
-    display: none;
-    position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
-    background: rgba(7,11,20,0.98);
-    backdrop-filter: blur(20px);
-    flex-direction: column;
-    padding: 1.5rem;
-    gap: 0.5rem;
-    border-bottom: 1px solid rgba(124,58,237,0.2);
-    z-index: 1000;
-  }
-  .nav-links.mobile-open {
-    display: flex;
-  }
-  .hero-stats { gap: 20px; padding: 16px 20px; }
-  .stat-divider { display: none; }
-  .hero-cta { flex-direction: column; align-items: center; }
-  .profiling-grid { grid-template-columns: 1fr; }
-  .evals-header-controls { flex-direction: column; }
-  .footer-inner { flex-direction: column; }
-  .footer-info { text-align: left; }
-  .trust-metrics-banner { flex-direction: column; gap: 16px; }
-}
+/* (Reglas responsivas completas ubicadas al final de la hoja de estilos) */
+
 
 /* ─── MODO RECRUITER & TRUST CENTER (ROADMAP PARTE B) ─────────────────────── */
 .recruiter-section, .trust-center-section {
@@ -940,7 +923,7 @@ body {
 /* Trust Center */
 .trust-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
   gap: 20px;
   margin-bottom: 32px;
 }
@@ -1193,6 +1176,465 @@ body {
 @keyframes pulse-badge {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.75; transform: scale(0.98); }
+}
+
+/* ─── SISTEMA RESPONSIVO INTEGRAL (TABLETS & MÓVILES) ─────────────────────── */
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 1. TABLETS & PANTALLAS MEDIANAS (<= 992px) ────────────────────────────── */
+@media (max-width: 992px) {
+  .container { padding: 0 20px; }
+
+  /* Navbar móvil/tablet */
+  .hamburger {
+    display: flex;
+    margin-left: auto;
+  }
+  .nav-badge {
+    display: none;
+  }
+  .nav-links {
+    display: none;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: rgba(7, 11, 20, 0.97);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    flex-direction: column;
+    padding: 1.25rem 1.5rem;
+    gap: 0.6rem;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    animation: slideDown 0.25s ease forwards;
+  }
+  .nav-links.mobile-open {
+    display: flex;
+  }
+  .nav-link {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+  }
+
+  /* Hero stats en tablet */
+  .hero-stats {
+    gap: 20px;
+    padding: 18px 24px;
+    max-width: 650px;
+    margin: 0 auto;
+  }
+
+  /* Grillas en tablet */
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .vacantes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .trust-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .trust-metrics-banner {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    padding: 24px 20px;
+  }
+}
+
+/* ── 2. MÓVILES Y PANTALLAS COMPACTAS (<= 768px) ───────────────────────────── */
+@media (max-width: 768px) {
+  .container { padding: 0 16px; }
+
+  /* Tipografía y Espaciados Generales */
+  .hero {
+    padding: 110px 0 50px 0;
+  }
+  .hero-title {
+    font-size: clamp(1.85rem, 6vw, 2.5rem);
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .hero-subtitle {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+  .section-header {
+    margin-bottom: 32px;
+  }
+  .section-title {
+    font-size: 1.65rem;
+    line-height: 1.25;
+  }
+  .section-subtitle {
+    font-size: 0.88rem;
+  }
+
+  /* Selector de Espacio Activo (Role Switcher) */
+  .role-switcher-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto 24px auto;
+    border-radius: var(--radius-lg);
+    padding: 10px;
+    gap: 8px;
+  }
+  .role-switcher-label {
+    text-align: center;
+    padding: 0;
+    font-size: 0.78rem;
+  }
+  .role-toggle-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+  .role-toggle-btn {
+    width: 100%;
+    padding: 8px 6px;
+    font-size: 0.8rem;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Hero Call To Action */
+  .hero-cta {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto 36px auto;
+    gap: 10px;
+  }
+  .hero-cta .btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    padding: 12px 18px;
+  }
+
+  /* Métricas del Hero */
+  .hero-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    padding: 18px 16px;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    border-radius: var(--radius-lg);
+  }
+  .stat-divider { display: none; }
+  .stat-num { font-size: 1.55rem; }
+  .stat-label { font-size: 0.72rem; }
+
+  /* Sección Subida CV */
+  .upload-tabs {
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 8px;
+    font-size: 0.82rem;
+    text-align: center;
+  }
+  .upload-card {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+  .drop-zone {
+    padding: 28px 14px;
+  }
+  .cv-textarea {
+    font-size: 0.88rem;
+    padding: 12px;
+    min-height: 160px;
+  }
+  .analyze-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 0.95rem;
+    justify-content: center;
+  }
+
+  /* Pipeline Multiagente Visual */
+  .pipeline-visual {
+    padding: 18px 14px;
+    margin-top: 24px;
+  }
+  .pipeline-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+  .pipeline-arrow {
+    display: none;
+  }
+  .pipeline-step {
+    min-width: 0;
+    width: 100%;
+    padding: 12px 8px;
+  }
+  .step-icon { font-size: 1.25rem; }
+  .step-name { font-size: 0.72rem; text-align: center; }
+
+  /* Resultados y Tarjetas de Match */
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .match-card {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+  .match-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .match-scores {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .simulador-box {
+    padding: 14px 12px;
+  }
+  .simulador-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .simulador-slider {
+    width: 100%;
+  }
+  .profiling-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .profiling-card {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  /* Modo Reclutador */
+  .recruiter-section, .trust-center-section, .vacantes-section, .evals-section {
+    padding: 50px 0;
+  }
+  .recruiter-card {
+    padding: 20px 14px;
+    border-radius: var(--radius-lg);
+  }
+  .recruiter-select-row {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .recruiter-select-row .form-select,
+  .recruiter-select-row button {
+    width: 100% !important;
+  }
+  .recruiter-actions-row {
+    text-align: center !important;
+  }
+  .recruiter-actions-row button {
+    width: 100% !important;
+    justify-content: center;
+  }
+  .recruiter-candidates-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .recruiter-cand-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 12px;
+  }
+
+  /* Explorador de Vacantes */
+  .vacantes-filter-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    gap: 6px;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .vacantes-filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .filter-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 7px 12px;
+    font-size: 0.78rem;
+  }
+  .vacantes-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .vacante-card {
+    padding: 18px 14px;
+  }
+
+  /* Trust Center */
+  .trust-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .trust-card {
+    padding: 18px 14px;
+  }
+  .trust-metrics-banner {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 18px 14px;
+  }
+  .metric-value { font-size: 1.55rem; }
+  .metric-label { font-size: 0.72rem; }
+
+  /* Dashboard de Evals */
+  .evals-header-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .evals-score-card {
+    flex-direction: column;
+    text-align: center;
+    width: 100%;
+    padding: 18px 14px;
+    gap: 14px;
+  }
+  .score-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+    gap: 6px;
+  }
+  #run-evals-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .evals-table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-md);
+  }
+  .evals-table {
+    min-width: 580px;
+    font-size: 0.8rem;
+  }
+  .evals-table th, .evals-table td {
+    padding: 10px 12px;
+  }
+
+  /* Thought Stream */
+  .thought-stream {
+    max-width: 100%;
+    margin: 1.25rem 0;
+  }
+  .thought-toggle {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+  .thought-console {
+    font-size: 0.75rem;
+    padding: 0.85rem;
+  }
+  .thought-line {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* Modal Dialog */
+  .modal-overlay {
+    padding: 12px;
+  }
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 88vh;
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  /* Footer */
+  .footer-inner {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+  .footer-info {
+    text-align: center;
+  }
+}
+
+/* ── 3. MÓVILES PEQUEÑOS (<= 480px) ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .container { padding: 0 12px; }
+
+  .hero {
+    padding: 95px 0 35px 0;
+  }
+  .hero-title {
+    font-size: 1.6rem;
+  }
+  .hero-tag {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+  }
+  .hero-stats {
+    gap: 8px;
+    padding: 14px 10px;
+  }
+  .stat-num { font-size: 1.35rem; }
+  .stat-label { font-size: 0.68rem; }
+
+  .role-toggle-btn {
+    font-size: 0.74rem;
+    padding: 7px 4px;
+  }
+
+  .trust-metrics-banner {
+    gap: 8px;
+    padding: 14px 8px;
+  }
+  .metric-value { font-size: 1.35rem; }
+  .metric-label { font-size: 0.66rem; }
+
+  .score-details {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
 /* ─── Reduced Motion ───────────────────────────────────────────────────────── */
